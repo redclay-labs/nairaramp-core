@@ -109,3 +109,17 @@
   - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
   - `pnpm test`: Ran Vitest unit tests, passed 31 tests across 5 test files (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 09: SEP-10 integration test
+
+- **What was built:**
+  - `test/integration/helpers.ts`: Implemented `createFundedTestAccount()` to generate a random `Keypair`, fund it via friendbot (`https://friendbot.stellar.org?addr=<publicKey>`) with a 3-second retry on failure, and return the secret key. Implemented `addTrustline(secret, assetCode, issuer)` to submit a `changeTrust` operation to `https://horizon-testnet.stellar.org` using Horizon `Server` and `TransactionBuilder`.
+  - `test/integration/sep10.test.ts`: Created integration test guarded by `describe.skipIf(process.env.RUN_INTEGRATION !== "1")`. Funds a test account via friendbot, initializes `createRamp` for `sdf-testanchor` with `keypairSigner`, calls `authenticate()`, and asserts that a valid 3-part dot-separated JWT token is returned.
+  - `src/ramp.ts`: Enhanced `createRamp` to handle `@stellar/typescript-wallet-sdk`'s synchronous `signWithClientAccount` signature interface by awaiting the async signing promise in `sep10.sign` before token exchange, and appended only newly created signatures to avoid duplicating challenge server signatures.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, 31 passed, 1 integration test skipped as expected when `RUN_INTEGRATION` is unset (exit code 0).
+  - `pnpm test:integration`: Ran live integration test against Stellar testnet and `sdf-testanchor`, passed 1 test (exit code 0).
+- **Open issues:** None.
