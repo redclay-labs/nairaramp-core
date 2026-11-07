@@ -5,12 +5,33 @@ import {
 } from "@stellar/stellar-sdk";
 import {
   PublicKeypair,
+  Types,
   Wallet,
   type WalletSigner,
 } from "@stellar/typescript-wallet-sdk";
 import { getAnchor } from "./registry/index.js";
 import { isNairaRampError, NairaRampError } from "./errors.js";
 import type { Signer } from "./signers/types.js";
+
+type SdkAnchorTx = Types.DepositTransaction & Types.WithdrawTransaction;
+
+export type AnchorTransaction = Pick<
+  SdkAnchorTx,
+  | "id"
+  | "status"
+  | "amount_in"
+  | "amount_out"
+  | "withdraw_anchor_account"
+  | "withdraw_memo"
+  | "withdraw_memo_type"
+  | "stellar_transaction_id"
+  | "message"
+>;
+
+export interface DepositOptions {
+  assetCode: string;
+  amount?: string;
+}
 
 export interface CreateRampOptions {
   network: "testnet" | "mainnet";
@@ -20,6 +41,8 @@ export interface CreateRampOptions {
 
 export interface Ramp {
   authenticate(): Promise<string>;
+  deposit(options: DepositOptions): Promise<{ id: string; url: string }>;
+  getTransaction(id: string): Promise<AnchorTransaction>;
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -42,6 +65,68 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
+function mapAnchorError(
+  err: unknown,
+  homeDomain: string,
+  signerError?: unknown
+): never {
+  if (isNairaRampError(err)) {
+    throw err;
+  }
+  if (signerError) {
+    throw new NairaRampError(
+      "SIGNER_REJECTED",
+      "Signer rejected or failed during transaction signing",
+      { cause: signerError }
+    );
+  }
+
+  const errName =
+    err && typeof err === "object" && "name" in err
+      ? String((err as { name: unknown }).name)
+      : "";
+  const errMsg = err instanceof Error ? err.message : String(err);
+
+  if (
+    errName.includes("Signer") ||
+    errMsg.toLowerCase().includes("user denied") ||
+    errMsg.toLowerCase().includes("signer rejected")
+  ) {
+    throw new NairaRampError(
+      "SIGNER_REJECTED",
+      "Signer rejected transaction",
+      { cause: err }
+    );
+  }
+
+  if (
+    errName.includes("Challenge") ||
+    errName.includes("Passphrase") ||
+    errName.includes("DomainSigning") ||
+    errMsg.includes("challenge") ||
+    errMsg.includes("Challenge") ||
+    errMsg.includes("passphrase") ||
+    errMsg.includes("Passphrase") ||
+    errMsg.includes("400") ||
+    errMsg.includes("401") ||
+    errMsg.includes("403") ||
+    errMsg.toLowerCase().includes("unauthorized") ||
+    errMsg.toLowerCase().includes("authentication")
+  ) {
+    throw new NairaRampError(
+      "AUTH_FAILED",
+      `Authentication failed: ${errMsg}`,
+      { cause: err }
+    );
+  }
+
+  throw new NairaRampError(
+    "ANCHOR_UNREACHABLE",
+    `Failed to communicate with anchor at ${homeDomain}: ${errMsg}`,
+    { cause: err }
+  );
+}
+
 export function createRamp({
   network,
   anchorId,
@@ -57,7 +142,7 @@ export function createRamp({
   let cachedToken: string | null = null;
   let cachedTokenExpSec: number | null = null;
 
-  return {
+  const ramp: Ramp = {
     async authenticate(): Promise<string> {
       const nowSec = Math.floor(Date.now() / 1000);
       if (
@@ -162,60 +247,82 @@ export function createRamp({
 
         return token;
       } catch (err) {
-        if (isNairaRampError(err)) {
-          throw err;
-        }
-        if (signerError) {
-          throw new NairaRampError(
-            "SIGNER_REJECTED",
-            "Signer rejected or failed during transaction signing",
-            { cause: signerError }
-          );
-        }
+        mapAnchorError(err, anchorEntry.homeDomain, signerError);
+      }
+    },
 
-        const errName =
-          err && typeof err === "object" && "name" in err
-            ? String((err as { name: unknown }).name)
-            : "";
-        const errMsg = err instanceof Error ? err.message : String(err);
+    async deposit(options: DepositOptions): Promise<{ id: string; url: string }> {
+      const { assetCode, amount } = options;
 
-        if (
-          errName.includes("Signer") ||
-          errMsg.toLowerCase().includes("user denied") ||
-          errMsg.toLowerCase().includes("signer rejected")
-        ) {
-          throw new NairaRampError(
-            "SIGNER_REJECTED",
-            "Signer rejected transaction",
-            { cause: err }
-          );
-        }
-
-        if (
-          errName.includes("Challenge") ||
-          errName.includes("Passphrase") ||
-          errName.includes("DomainSigning") ||
-          errMsg.includes("challenge") ||
-          errMsg.includes("Challenge") ||
-          errMsg.includes("passphrase") ||
-          errMsg.includes("Passphrase") ||
-          errMsg.includes("400") ||
-          errMsg.includes("401") ||
-          errMsg.includes("403")
-        ) {
-          throw new NairaRampError(
-            "AUTH_FAILED",
-            `Authentication failed: ${errMsg}`,
-            { cause: err }
-          );
-        }
-
+      const isSupported = anchorEntry.assets.some((a) => a.code === assetCode);
+      if (!isSupported) {
         throw new NairaRampError(
-          "ANCHOR_UNREACHABLE",
-          `Failed to communicate with anchor at ${anchorEntry.homeDomain}: ${errMsg}`,
+          "UNSUPPORTED_ASSET",
+          `Asset ${assetCode} is not supported by anchor ${anchorEntry.id}`
+        );
+      }
+
+      const token = await ramp.authenticate();
+
+      let destinationAccount: string;
+      try {
+        destinationAccount = await signer.getPublicKey();
+      } catch (err) {
+        throw new NairaRampError(
+          "SIGNER_REJECTED",
+          "Signer failed to provide public key",
           { cause: err }
         );
       }
+
+      try {
+        const authToken = Types.AuthToken.from(token);
+        const sep24 = anchorClient.sep24();
+
+        const depositParams: {
+          assetCode: string;
+          authToken: Types.AuthToken;
+          destinationAccount: string;
+          extraFields?: { [key: string]: string };
+        } = {
+          assetCode,
+          authToken,
+          destinationAccount,
+        };
+        if (amount !== undefined) {
+          depositParams.extraFields = { amount };
+        }
+
+        const resp = await sep24.deposit(depositParams);
+
+        if (!resp || !resp.id || !resp.url) {
+          const detail = resp?.error ? `: ${resp.error}` : "";
+          throw new NairaRampError(
+            "ANCHOR_UNREACHABLE",
+            `Anchor at ${anchorEntry.homeDomain} returned invalid SEP-24 deposit response${detail}`
+          );
+        }
+
+        return { id: resp.id, url: resp.url };
+      } catch (err) {
+        mapAnchorError(err, anchorEntry.homeDomain);
+      }
+    },
+
+    async getTransaction(id: string): Promise<AnchorTransaction> {
+      const token = await ramp.authenticate();
+
+      try {
+        const authToken = Types.AuthToken.from(token);
+        const sep24 = anchorClient.sep24();
+        const tx = await sep24.getTransactionBy({ authToken, id });
+
+        return tx as unknown as AnchorTransaction;
+      } catch (err) {
+        mapAnchorError(err, anchorEntry.homeDomain);
+      }
     },
   };
+
+  return ramp;
 }
