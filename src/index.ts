@@ -12,3 +12,10 @@ export {
   type NairaRampErrorCode,
   type NairaRampErrorOptions,
 } from "./errors.js";
+export {
+  createRamp,
+  type Ramp,
+  type CreateRampOptions,
+} from "./ramp.js";
+export { type Signer } from "./signers/types.js";
+export { keypairSigner } from "./signers/keypair.js";
