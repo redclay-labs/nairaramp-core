@@ -40,3 +40,23 @@
   - `pnpm typecheck`: Passed with 0 errors (exit code 0).
   - `pnpm test`: Ran unit smoke test, 1 passed (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 04: Issue and PR templates
+
+- **What was built:** Added GitHub issue forms and PR template under `.github/`:
+  - `.github/ISSUE_TEMPLATE/config.yml`: Disabled blank issues (`blank_issues_enabled: false`).
+  - `.github/ISSUE_TEMPLATE/bug.yml`: Form for bugs with required dropdown Area (registry, signers, auth, deposit, withdraw, watcher, quotes, guard, docs), what happened, expected behaviour, reproduction steps, and version.
+  - `.github/ISSUE_TEMPLATE/feature.yml`: Form for features with problem, proposed solution, required "Done when" checklist, and files to touch.
+  - `.github/ISSUE_TEMPLATE/spike.yml`: Form for technical spikes with question to answer, what to investigate, and expected output.
+  - `.github/pull_request_template.md`: PR template with "Closes #", summary, test evidence, and verification checklist.
+  - Validated all YAML schemas via `js-yaml`.
+- **Commands run with results:**
+  - `npx --yes js-yaml .github/ISSUE_TEMPLATE/config.yml`: Validated YAML AST (exit code 0).
+  - `npx --yes js-yaml .github/ISSUE_TEMPLATE/bug.yml`: Validated YAML AST (exit code 0).
+  - `npx --yes js-yaml .github/ISSUE_TEMPLATE/feature.yml`: Validated YAML AST (exit code 0).
+  - `npx --yes js-yaml .github/ISSUE_TEMPLATE/spike.yml`: Validated YAML AST (exit code 0).
+  - `pnpm build`: Built cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran unit smoke test, 1 passed (exit code 0).
+- **Open issues:** None.
