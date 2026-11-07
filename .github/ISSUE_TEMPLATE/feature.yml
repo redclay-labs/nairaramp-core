@@ -1,0 +1,43 @@
+name: Feature Request
+description: Propose a new feature or enhancement for @nairaramp/core
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem or limitation does this feature address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: A clear and concise description of the proposed solution.
+    validations:
+      required: true
+  - type: checkboxes
+    id: done-when
+    attributes:
+      label: Done when
+      description: Acceptance criteria that must be satisfied for completion.
+      options:
+        - label: Implementation meets specification and passes all automated checks
+          required: true
+        - label: Tests added or updated
+          required: true
+        - label: Documentation updated
+          required: true
+    validations:
+      required: true
+  - type: textarea
+    id: files-to-touch
+    attributes:
+      label: Files to touch
+      description: Which files or modules will be created or modified?
+      placeholder: |
+        - src/...
+        - test/...
+    validations:
+      required: false
