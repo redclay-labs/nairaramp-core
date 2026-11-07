@@ -638,4 +638,36 @@ describe("createRamp", () => {
       }
     });
   });
+
+  describe("watch", () => {
+    it("exposes watch returning { stop } that polls getTransaction", async () => {
+      vi.useFakeTimers();
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24GetTransactionBy.mockResolvedValue({
+        id: "tx-watch-1",
+        status: "incomplete",
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const onStatus = vi.fn();
+      const sub = ramp.watch("tx-watch-1", { onStatus });
+
+      expect(typeof sub.stop).toBe("function");
+      await vi.advanceTimersByTimeAsync(2000);
+
+      expect(onStatus).toHaveBeenCalledWith(
+        "incomplete",
+        expect.objectContaining({ id: "tx-watch-1", status: "incomplete" })
+      );
+
+      sub.stop();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
 });
