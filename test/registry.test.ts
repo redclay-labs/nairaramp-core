@@ -95,6 +95,14 @@ describe("Anchor Registry Functions", () => {
     expect(() => getAnchor("non-existent-id")).toThrow("Anchor not found with id: non-existent-id");
   });
 
+  it("getAnchor returns registered sdf-testanchor", () => {
+    const anchor = getAnchor("sdf-testanchor");
+    expect(anchor.id).toBe("sdf-testanchor");
+    expect(anchor.homeDomain).toBe("testanchor.stellar.org");
+    expect(anchor.network).toBe("testnet");
+    expect(anchor.seps).toContain("sep24");
+  });
+
   it("listAnchors returns array", () => {
     const all = listAnchors();
     expect(Array.isArray(all)).toBe(true);
