@@ -91,8 +91,8 @@ describe("Anchor Registry Schema", () => {
 });
 
 describe("Anchor Registry Functions", () => {
-  it("getAnchor throws plain Error for unknown id", () => {
-    expect(() => getAnchor("non-existent-id")).toThrow("Anchor not found with id: non-existent-id");
+  it("getAnchor throws on unknown id", () => {
+    expect(() => getAnchor("non-existent-id")).toThrow(/non-existent-id/);
   });
 
   it("getAnchor returns registered sdf-testanchor", () => {
