@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | @stellar/stellar-sdk | 17.4.0 | 2026-11-07 |
 | @stellar/typescript-wallet-sdk | 6.0.0 | 2026-11-07 |
+| zod | 4.6.7 | 2026-11-07 |
 | @types/node | 26.6.6 | 2026-11-07 |
 | cross-env | 10.1.0 | 2026-11-07 |
 | eslint | 10.14.0 | 2026-11-07 |
