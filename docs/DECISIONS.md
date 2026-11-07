@@ -16,3 +16,5 @@
 | 2026-11-07 | Pinned zod to 4.6.7 | Latest stable runtime schema validation dependency |
 | 2026-11-07 | Await async client signing in sep10.sign wrapper | @stellar/typescript-wallet-sdk 6.0.0 signWithClientAccount is synchronous |
 | 2026-11-07 | Slice new signatures on transaction | TransactionBuilder.fromXDR includes original challenge server signature |
+| 2026-11-07 | Pinned @stellar/freighter-api to 6.0.1 | Official npm package for Freighter wallet integration |
+| 2026-11-07 | Pinned @creit.tech/stellar-wallets-kit to 2.8.0 | Official npm package from Creit-Tech for Stellar Wallets Kit |
