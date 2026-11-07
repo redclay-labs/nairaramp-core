@@ -30,3 +30,13 @@
   - `pnpm test`: Passed 1 test (exit code 0).
   - `pnpm build`: Built cleanly to `dist/` (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 03: License, security, contributing, README
+
+- **What was built:** Added `LICENSE` (Apache 2.0 with copyright 2026 John Imeobong Abasiediedu), updated `package.json` with `"license": "Apache-2.0"`, created `SECURITY.md` (private vulnerability reporting policy), created `CONTRIBUTING.md` (project scope, setup, testnet tests, branch naming, Stellar Wave guidelines on Drips, and code rules), and created `README.md` with links to governance files.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS distributions to `dist/` via `tsup` (exit code 0).
+  - `pnpm lint`: Passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran unit smoke test, 1 passed (exit code 0).
+- **Open issues:** None.
