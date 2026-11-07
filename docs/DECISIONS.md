@@ -13,3 +13,4 @@
 | 2026-11-07 | Vitest 60s timeout configured via test.projects | Vitest 5 deprecated test.workspace in favor of test.projects |
 | 2026-11-07 | Pinned pnpm packageManager to 9.15.9 | Matches installed pnpm 9 version |
 | 2026-11-07 | GitHub Actions: checkout@v7, setup-node@v7, pnpm/action-setup@v6 | Current major versions per official GitHub repositories |
+| 2026-11-07 | Pinned zod to 4.6.7 | Latest stable runtime schema validation dependency |
