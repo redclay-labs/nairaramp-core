@@ -19,3 +19,8 @@ export {
 } from "./ramp.js";
 export { type Signer } from "./signers/types.js";
 export { keypairSigner } from "./signers/keypair.js";
+export { freighterSigner } from "./signers/freighter.js";
+export {
+  walletsKitSigner,
+  type WalletsKitLike,
+} from "./signers/walletsKit.js";
