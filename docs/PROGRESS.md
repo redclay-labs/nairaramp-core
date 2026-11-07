@@ -83,3 +83,13 @@
   - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
   - `pnpm test`: Ran Vitest unit tests, passed 10 tests across 2 test files (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 07: Typed errors
+
+- **What was built:** Created `src/errors.ts` defining `NairaRampErrorCode` (11 distinct error codes), `NairaRampError` extending `Error` (with code, typed cause passed to ES2022 Error constructor, prototype restoration for CJS), and type predicate `isNairaRampError` supporting structural checks across duplicate package copies. Changed `getAnchor` in `src/registry/index.ts` to throw `NairaRampError("ANCHOR_NOT_FOUND", "Unknown anchor id: <id>")`. Exported error types and classes from `src/index.ts`. Added comprehensive unit tests in `test/errors.test.ts` (covering code, message, cause via options/direct argument, instanceof, and plain objects) and updated `test/registry.test.ts`.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 20 tests across 3 test files (exit code 0).
+- **Open issues:** None.
