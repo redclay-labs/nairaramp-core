@@ -16,6 +16,9 @@ import {
 const {
   mockSep10Authenticate,
   mockSep10,
+  mockSep24Deposit,
+  mockSep24GetTransactionBy,
+  mockSep24,
   mockAnchor,
   mockTestNet,
   mockMainNet,
@@ -24,8 +27,15 @@ const {
   const mockSep10 = vi.fn().mockResolvedValue({
     authenticate: mockSep10Authenticate,
   });
+  const mockSep24Deposit = vi.fn();
+  const mockSep24GetTransactionBy = vi.fn();
+  const mockSep24 = vi.fn().mockReturnValue({
+    deposit: mockSep24Deposit,
+    getTransactionBy: mockSep24GetTransactionBy,
+  });
   const mockAnchor = vi.fn().mockReturnValue({
     sep10: mockSep10,
+    sep24: mockSep24,
   });
   const mockTestNet = vi.fn().mockReturnValue({
     anchor: mockAnchor,
@@ -37,6 +47,9 @@ const {
   return {
     mockSep10Authenticate,
     mockSep10,
+    mockSep24Deposit,
+    mockSep24GetTransactionBy,
+    mockSep24,
     mockAnchor,
     mockTestNet,
     mockMainNet,
@@ -53,6 +66,11 @@ vi.mock("@stellar/typescript-wallet-sdk", () => {
       fromPublicKey: (pk: string) => ({
         publicKey: pk,
       }),
+    },
+    Types: {
+      AuthToken: {
+        from: (token: string) => ({ token }),
+      },
     },
   };
 });
@@ -79,11 +97,18 @@ describe("createRamp", () => {
     vi.clearAllMocks();
     mockSep10Authenticate.mockReset();
     mockSep10.mockReset();
+    mockSep24Deposit.mockReset();
+    mockSep24GetTransactionBy.mockReset();
     mockSep10.mockResolvedValue({
       authenticate: mockSep10Authenticate,
     });
+    mockSep24.mockReturnValue({
+      deposit: mockSep24Deposit,
+      getTransactionBy: mockSep24GetTransactionBy,
+    });
     mockAnchor.mockReturnValue({
       sep10: mockSep10,
+      sep24: mockSep24,
     });
     mockTestNet.mockReturnValue({
       anchor: mockAnchor,
@@ -354,5 +379,263 @@ describe("createRamp", () => {
         signer: mockSigner,
       })
     ).toThrowError(/Unknown anchor id: unknown-anchor-id/);
+  });
+
+  describe("deposit", () => {
+    it("throws UNSUPPORTED_ASSET immediately if asset is not in registry", async () => {
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.deposit({ assetCode: "NONEXISTENT" });
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("UNSUPPORTED_ASSET");
+          expect(e.message).toContain("NONEXISTENT");
+        }
+      }
+
+      // Must throw BEFORE any network call or SEP-10 auth
+      expect(mockSep10Authenticate).not.toHaveBeenCalled();
+      expect(mockSep24Deposit).not.toHaveBeenCalled();
+    });
+
+    it("authenticates and calls sep24.deposit with amount and destination account", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24Deposit.mockResolvedValue({
+        id: "dep-123",
+        url: "https://testanchor.stellar.org/sep24/interactive?id=dep-123",
+        type: "interactive_customer_info_needed",
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const res = await ramp.deposit({ assetCode: "SRT", amount: "25.50" });
+
+      expect(res).toEqual({
+        id: "dep-123",
+        url: "https://testanchor.stellar.org/sep24/interactive?id=dep-123",
+      });
+      expect(mockSep10Authenticate).toHaveBeenCalled();
+      expect(mockSep24Deposit).toHaveBeenCalledWith({
+        assetCode: "SRT",
+        authToken: expect.objectContaining({ token }),
+        destinationAccount: kp.publicKey(),
+        extraFields: { amount: "25.50" },
+      });
+    });
+
+    it("omits extraFields if amount is not given", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24Deposit.mockResolvedValue({
+        id: "dep-456",
+        url: "https://testanchor.stellar.org/sep24/interactive?id=dep-456",
+        type: "interactive_customer_info_needed",
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const res = await ramp.deposit({ assetCode: "SRT" });
+
+      expect(res.id).toBe("dep-456");
+      expect(mockSep24Deposit).toHaveBeenCalledWith({
+        assetCode: "SRT",
+        authToken: expect.objectContaining({ token }),
+        destinationAccount: kp.publicKey(),
+      });
+      const callArgs = mockSep24Deposit.mock.calls[0]?.[0];
+      expect(callArgs?.extraFields).toBeUndefined();
+    });
+
+    it("throws ANCHOR_UNREACHABLE if response has missing id or url", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24Deposit.mockResolvedValue({
+        type: "error",
+        error: "Deposit service unavailable",
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.deposit({ assetCode: "SRT" });
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("ANCHOR_UNREACHABLE");
+          expect(e.message).toContain("Deposit service unavailable");
+        }
+      }
+    });
+
+    it("maps deposit network error to ANCHOR_UNREACHABLE", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24Deposit.mockRejectedValue(new Error("connect ECONNREFUSED"));
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.deposit({ assetCode: "SRT" });
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("ANCHOR_UNREACHABLE");
+        }
+      }
+    });
+
+    it("maps deposit 401 error to AUTH_FAILED", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24Deposit.mockRejectedValue(
+        new Error("Request failed with status code 401")
+      );
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.deposit({ assetCode: "SRT" });
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("AUTH_FAILED");
+        }
+      }
+    });
+
+    it("maps signer error during deposit to SIGNER_REJECTED", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSigner.getPublicKey = vi
+        .fn()
+        .mockRejectedValue(new Error("Signer rejected"));
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.deposit({ assetCode: "SRT" });
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("SIGNER_REJECTED");
+        }
+      }
+    });
+  });
+
+  describe("getTransaction", () => {
+    it("fetches transaction details via sep24.getTransactionBy", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      const mockTx = {
+        id: "tx-789",
+        status: "incomplete",
+        amount_in: "100.00",
+        amount_out: "98.50",
+        stellar_transaction_id: "stellartx123",
+        message: "Awaiting deposit",
+      };
+      mockSep24GetTransactionBy.mockResolvedValue(mockTx);
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const tx = await ramp.getTransaction("tx-789");
+
+      expect(tx.id).toBe("tx-789");
+      expect(tx.status).toBe("incomplete");
+      expect(tx.amount_in).toBe("100.00");
+      expect(mockSep24GetTransactionBy).toHaveBeenCalledWith({
+        authToken: expect.objectContaining({ token }),
+        id: "tx-789",
+      });
+    });
+
+    it("maps getTransaction 401/unauthorized error to AUTH_FAILED", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24GetTransactionBy.mockRejectedValue(
+        new Error("Request failed with status code 401")
+      );
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.getTransaction("tx-789");
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("AUTH_FAILED");
+        }
+      }
+    });
+
+    it("maps getTransaction network error to ANCHOR_UNREACHABLE", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24GetTransactionBy.mockRejectedValue(
+        new Error("Network timeout after 10000ms")
+      );
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      try {
+        await ramp.getTransaction("tx-789");
+        expect.fail("should have thrown");
+      } catch (e) {
+        expect(isNairaRampError(e)).toBe(true);
+        if (isNairaRampError(e)) {
+          expect(e.code).toBe("ANCHOR_UNREACHABLE");
+        }
+      }
+    });
   });
 });
