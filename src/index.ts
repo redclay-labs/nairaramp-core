@@ -26,3 +26,12 @@ export {
   walletsKitSigner,
   type WalletsKitLike,
 } from "./signers/walletsKit.js";
+export {
+  TERMINAL_STATUSES,
+  type TransactionStatus,
+  type TerminalStatus,
+  type WatchHandlers,
+  type WatchSubscription,
+  type WatchableRamp,
+  watchTransaction,
+} from "./watcher.js";
