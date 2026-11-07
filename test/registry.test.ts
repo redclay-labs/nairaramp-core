@@ -6,6 +6,8 @@ import {
   AnchorEntrySchema,
   getAnchor,
   listAnchors,
+  NairaRampError,
+  isNairaRampError,
 } from "../src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -91,8 +93,18 @@ describe("Anchor Registry Schema", () => {
 });
 
 describe("Anchor Registry Functions", () => {
-  it("getAnchor throws on unknown id", () => {
-    expect(() => getAnchor("non-existent-id")).toThrow(/non-existent-id/);
+  it("getAnchor throws NairaRampError for unknown id", () => {
+    expect(() => getAnchor("non-existent-id")).toThrow(NairaRampError);
+    expect(() => getAnchor("non-existent-id")).toThrow("Unknown anchor id: non-existent-id");
+    try {
+      getAnchor("non-existent-id");
+    } catch (e) {
+      expect(isNairaRampError(e)).toBe(true);
+      if (isNairaRampError(e)) {
+        expect(e.code).toBe("ANCHOR_NOT_FOUND");
+        expect(e.message).toBe("Unknown anchor id: non-existent-id");
+      }
+    }
   });
 
   it("getAnchor returns registered sdf-testanchor", () => {
