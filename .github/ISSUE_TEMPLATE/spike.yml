@@ -1,0 +1,26 @@
+name: Spike
+description: Propose a time-boxed investigation or technical spike
+title: "[Spike]: "
+labels: ["spike"]
+body:
+  - type: textarea
+    id: question-to-answer
+    attributes:
+      label: Question to answer
+      description: What specific technical question or uncertainty are we answering?
+    validations:
+      required: true
+  - type: textarea
+    id: what-to-investigate
+    attributes:
+      label: What to investigate
+      description: What libraries, APIs, protocols, or architectures should be researched?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-output
+    attributes:
+      label: Expected output
+      description: What concrete artifact or decision document should be produced?
+    validations:
+      required: true
