@@ -9,4 +9,6 @@
 | 2026-11-07 | Keypair signer ships with createRamp | SEP-10 tests need a signer early |
 | 2026-11-07 | GitHub owner: redclay-labs | Origin remote points to github.com/redclay-labs/nairaramp-core |
 | 2026-11-07 | Explicit commit/push safeguards | Added explicit branch safeguard and scope verification steps to AGENTS.md |
-
+| 2026-11-07 | Pinned TypeScript to 5.8.3 | typescript-eslint 8.72.1 requires peer typescript < 6.1.0 |
+| 2026-11-07 | Vitest 60s timeout configured via test.projects | Vitest 5 deprecated test.workspace in favor of test.projects |
+| 2026-11-07 | Pinned pnpm packageManager to 9.15.9 | Matches installed pnpm 9 version |
