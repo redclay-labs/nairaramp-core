@@ -123,3 +123,20 @@
   - `pnpm test`: Ran Vitest unit tests, 31 passed, 1 integration test skipped as expected when `RUN_INTEGRATION` is unset (exit code 0).
   - `pnpm test:integration`: Ran live integration test against Stellar testnet and `sdf-testanchor`, passed 1 test (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 10: Freighter and Wallets Kit signers
+
+- **What was built:**
+  - Added `@stellar/freighter-api` (pinned to `6.0.1`) and `@creit.tech/stellar-wallets-kit` (pinned to `2.8.0`) as optional `peerDependencies` (with `peerDependenciesMeta` optional: true) and as `devDependencies`.
+  - Updated `package.json` and `VERSIONS.md`.
+  - `src/signers/freighter.ts`: Implemented `freighterSigner(): Signer` using dynamic `import("@stellar/freighter-api")` to allow bundling and usage without Freighter installed. Handled `getAddress` and `signTransaction` with exact return types, mapping rejections and `{ error }` payload responses to `NairaRampError("SIGNER_REJECTED")`.
+  - `src/signers/walletsKit.ts`: Implemented `walletsKitSigner(kit): Signer` taking an already initialized kit instance. Extracted address via kit's address methods and invoked `signTransaction` passing `networkPassphrase` and `address`. Mapped rejections and error-field payloads to `NairaRampError("SIGNER_REJECTED")`.
+  - `src/index.ts`: Re-exported `freighterSigner`, `walletsKitSigner`, and `WalletsKitLike`.
+  - `test/signers/freighter.test.ts`: Created comprehensive unit tests with mocked `@stellar/freighter-api` covering public key return, signed XDR return, rejection mapping, and error-field response mapping.
+  - `test/signers/walletsKit.test.ts`: Created comprehensive unit tests with mocked kit instance covering public key return (via `getAddress` and `address`), signed XDR return with parameters, rejection mapping, and error-field response mapping.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 44 tests across 7 test files, 1 integration test skipped (exit code 0).
+- **Open issues:** None.
