@@ -39,10 +39,17 @@ export interface CreateRampOptions {
   signer: Signer;
 }
 
+import {
+  watchTransaction,
+  type WatchHandlers,
+  type WatchSubscription,
+} from "./watcher.js";
+
 export interface Ramp {
   authenticate(): Promise<string>;
   deposit(options: DepositOptions): Promise<{ id: string; url: string }>;
   getTransaction(id: string): Promise<AnchorTransaction>;
+  watch(id: string, handlers: WatchHandlers): WatchSubscription;
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -321,6 +328,10 @@ export function createRamp({
       } catch (err) {
         mapAnchorError(err, anchorEntry.homeDomain);
       }
+    },
+
+    watch(id: string, handlers: WatchHandlers): WatchSubscription {
+      return watchTransaction(ramp, id, handlers);
     },
   };
 
