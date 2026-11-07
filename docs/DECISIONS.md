@@ -21,3 +21,4 @@
 | 2026-11-07 | AnchorTransaction derived via Pick from Types.DepositTransaction & Types.WithdrawTransaction | Union type Types.AnchorTransaction distributes in Pick, intersection provides all 9 target fields |
 | 2026-11-07 | Pass optional amount in Sep24PostParams via extraFields | Wallet SDK Sep24 deposit method accepts extraFields: { amount } |
 | 2026-11-07 | Watcher backoff: setTimeout chains with Math.min(delay * 1.5, 30000) | Satisfies sequential polling, no overlapping polls, and clean timer teardown |
+| 2026-11-07 | Withdrawal transfer payment built via @stellar/stellar-sdk | Wallet SDK transferWithdrawalTransaction rejects missing memo with WithdrawalTxMissingMemoError; stellar-sdk cleanly supports missing memos, 180s timeout, fee stats fallback, and Signer bridging |
