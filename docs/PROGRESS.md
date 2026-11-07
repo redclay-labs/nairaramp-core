@@ -140,3 +140,37 @@
   - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
   - `pnpm test`: Ran Vitest unit tests, passed 44 tests across 7 test files, 1 integration test skipped (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 11: SEP-24 deposit
+
+- **What was built:**
+  - `src/ramp.ts`:
+    - Defined and exported `AnchorTransaction` type derived via `Pick<>` from `@stellar/typescript-wallet-sdk`'s `Types.DepositTransaction & Types.WithdrawTransaction` (`id`, `status`, `amount_in`, `amount_out`, `withdraw_anchor_account`, `withdraw_memo`, `withdraw_memo_type`, `stellar_transaction_id`, `message`).
+    - Extended `Ramp` interface and implementation with:
+      - `deposit({ assetCode, amount }): Promise<{ id: string; url: string }>`:
+        - Validates `assetCode` against anchor registry assets upfront, throwing `NairaRampError("UNSUPPORTED_ASSET")` immediately before any network or auth call.
+        - Calls `authenticate()` to obtain valid SEP-10 JWT.
+        - Calls Wallet SDK SEP-24 `anchorClient.sep24().deposit(...)` with `assetCode`, `authToken` (`Types.AuthToken.from`), `destinationAccount` (`signer.getPublicKey()`), and passes `extraFields: { amount }` only if `amount` is given.
+        - Returns `{ id, url }` from the interactive deposit response.
+      - `getTransaction(id): Promise<AnchorTransaction>`:
+        - Authenticates and retrieves transaction status via Wallet SDK `anchorClient.sep24().getTransactionBy({ authToken, id })`.
+      - Extracted `mapAnchorError` helper mapping network errors to `ANCHOR_UNREACHABLE`, 401/403/unauthorized to `AUTH_FAILED`, and signer errors to `SIGNER_REJECTED`.
+  - `src/index.ts`: Re-exported `AnchorTransaction` and `DepositOptions`.
+  - `test/ramp.test.ts`: Added unit tests for `deposit` and `getTransaction` with mocked Wallet SDK SEP-24:
+    - Rejection on unsupported asset before any network or auth call.
+    - Deposit with and without `amount`.
+    - Verification of returned `{ id, url }`.
+    - Error mapping for missing response id/url, 401 auth failure, network unreachable, and signer rejection.
+    - Transaction lookup with returned id, status, and error mappings.
+  - `test/integration/sep24.test.ts`: Added live integration test against Stellar testnet and `sdf-testanchor`:
+    - Funds test account via friendbot.
+    - Adds trustline for `SRT` (issuer from registry).
+    - Calls `ramp.deposit({ assetCode: "SRT", amount: "10" })`, asserting valid `id` and `https://` interactive url.
+    - Calls `ramp.getTransaction(id)`, asserting transaction `id` and `status === "incomplete"`.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 54 tests across 7 test files, 2 integration tests skipped (exit code 0).
+  - `pnpm test:integration`: Ran live integration tests against Stellar testnet and `sdf-testanchor`, 2 passed (SEP-10 in 20.9s, SEP-24 in 17.0s) (exit code 0).
+- **Open issues:** None.
