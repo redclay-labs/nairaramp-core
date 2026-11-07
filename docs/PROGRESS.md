@@ -174,3 +174,38 @@
   - `pnpm test`: Ran Vitest unit tests, passed 54 tests across 7 test files, 2 integration tests skipped (exit code 0).
   - `pnpm test:integration`: Ran live integration tests against Stellar testnet and `sdf-testanchor`, 2 passed (SEP-10 in 20.9s, SEP-24 in 17.0s) (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 12: Transaction watcher
+
+- **What was built:**
+  - `src/watcher.ts`:
+    - Defined `TransactionStatus` type with 15 SEP-24 statuses.
+    - Defined `TERMINAL_STATUSES` constant array (`completed`, `refunded`, `expired`, `no_market`, `too_small`, `too_large`, `error`).
+    - Defined `WatchHandlers`, `WatchSubscription`, and `WatchableRamp` interfaces.
+    - Implemented `watchTransaction(ramp, id, handlers)`:
+      - Uses chained `setTimeout` (never `setInterval`) with concurrency guard (`isPolling`).
+      - Starts at 2000 ms, multiplies by 1.5 while status is unchanged, caps at 30000 ms, and resets delay to 2000 ms upon status change.
+      - Emits `onStatus(status, transaction)` strictly on status changes (and initial poll).
+      - Handles terminal statuses: calls `onComplete(transaction)` on `completed`; calls `onError(TRANSACTION_FAILED)` with anchor's message on other terminal statuses.
+      - Tracks consecutive failures: stops and emits `onError(ANCHOR_UNREACHABLE)` after 5 consecutive polling failures; resets failure counter on success.
+      - Treats unknown status strings as non-terminal, emitting `onStatus` and continuing polling.
+      - Implements `stop()` method to cleanly cancel pending timers, leaving 0 timers active.
+  - `src/ramp.ts`: Added `watch(id, handlers)` to `Ramp` interface and returned client object.
+  - `src/index.ts`: Re-exported `TransactionStatus`, `TERMINAL_STATUSES`, `TerminalStatus`, `WatchHandlers`, `WatchSubscription`, `WatchableRamp`, and `watchTransaction`.
+  - `test/watcher.test.ts`: Created comprehensive fake-timer test suite covering:
+    - Exact backoff sequence: 2000, 3000, 4500, 6750, 10125, 15187.5, 22781.25, 30000, 30000 ms while status is unchanged.
+    - Reset to 2000 ms upon status change and `onStatus` invocation only on change.
+    - Clean termination and `onComplete` invocation on `completed`.
+    - Clean termination and `onError` (`TRANSACTION_FAILED`) invocation on each of the other 6 terminal statuses.
+    - `stop()` clears timer and leaves `vi.getTimerCount() === 0`.
+    - `stop()` called while poll is in-flight stops polling without emitting subsequent events.
+    - Emitting `ANCHOR_UNREACHABLE` after 5 consecutive failures and resetting failure counter on success.
+    - Non-terminal handling for unknown status strings.
+  - `test/ramp.test.ts`: Added unit test verifying `ramp.watch` returns `{ stop }` and delegates polling to `getTransaction`.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 70 tests across 8 test files, 2 integration tests skipped (exit code 0).
+  - `pnpm test:integration`: Ran live integration tests against Stellar testnet and `sdf-testanchor`, 2 passed (SEP-10 in 10.8s, SEP-24 in 16.5s) (exit code 0).
+- **Open issues:** None.
