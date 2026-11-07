@@ -16,6 +16,8 @@ export {
   createRamp,
   type Ramp,
   type CreateRampOptions,
+  type DepositOptions,
+  type AnchorTransaction,
 } from "./ramp.js";
 export { type Signer } from "./signers/types.js";
 export { keypairSigner } from "./signers/keypair.js";
