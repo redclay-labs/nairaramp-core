@@ -14,3 +14,5 @@
 | 2026-11-07 | Pinned pnpm packageManager to 9.15.9 | Matches installed pnpm 9 version |
 | 2026-11-07 | GitHub Actions: checkout@v7, setup-node@v7, pnpm/action-setup@v6 | Current major versions per official GitHub repositories |
 | 2026-11-07 | Pinned zod to 4.6.7 | Latest stable runtime schema validation dependency |
+| 2026-11-07 | Await async client signing in sep10.sign wrapper | @stellar/typescript-wallet-sdk 6.0.0 signWithClientAccount is synchronous |
+| 2026-11-07 | Slice new signatures on transaction | TransactionBuilder.fromXDR includes original challenge server signature |
