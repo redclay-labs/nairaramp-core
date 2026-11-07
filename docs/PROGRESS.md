@@ -209,3 +209,40 @@
   - `pnpm test`: Ran Vitest unit tests, passed 70 tests across 8 test files, 2 integration tests skipped (exit code 0).
   - `pnpm test:integration`: Ran live integration tests against Stellar testnet and `sdf-testanchor`, 2 passed (SEP-10 in 10.8s, SEP-24 in 16.5s) (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 13: SEP-24 withdraw
+
+- **What was built:**
+  - `src/ramp.ts`:
+    - Added `WithdrawOptions` interface and exposed `withdraw(options)` on `Ramp`:
+      - Checks `assetCode` against anchor registry assets upfront, throwing `UNSUPPORTED_ASSET` before any network or auth call.
+      - Authenticates via SEP-10 and invokes Wallet SDK SEP-24 `anchorClient.sep24().withdraw(...)` passing `assetCode`, `authToken`, `withdrawalAccount` (`signer.getPublicKey()`), and `extraFields: { amount }` only if given.
+      - Maps errors to `NairaRampError` (`SIGNER_REJECTED`, `AUTH_FAILED`, `ANCHOR_UNREACHABLE`).
+    - Added `completeWithdrawal(id): Promise<{ hash: string }>` on `Ramp`:
+      - Retrieves transaction via `getTransaction(id)` and verifies `status === "pending_user_transfer_start"`, throwing `TRANSACTION_FAILED` naming the actual status on mismatch.
+      - Verifies `withdraw_anchor_account` and `amount_in` presence.
+      - Builds payment transaction via `@stellar/stellar-sdk` `TransactionBuilder` and `Operation.payment` (logging decision in `docs/DECISIONS.md`).
+      - Resolves payment asset from transaction or anchor registry entry.
+      - Handles each memo type: text memo (`Memo.text`), id memo (`Memo.id`), hash memo (decoded from base64 string to 32 bytes via `Buffer.from` and `Memo.hash`, validating 32-byte length), or missing memo (`Memo.none()`).
+      - Loads source account from Horizon right before building, uses fee mode from Horizon `feeStats()` with fallback to 1000 stroops, and sets 180s timeout.
+      - Signs transaction with `signer.signTransaction` and submits to Horizon, returning the transaction hash.
+      - Maps Horizon submission failures to `TRANSACTION_FAILED` including `result_codes` (`transaction` and `operations`).
+  - `src/index.ts`: Re-exported `WithdrawOptions`.
+  - `test/ramp.test.ts`: Added unit tests for:
+    - Unsupported asset rejection prior to auth/network.
+    - Withdrawal initiation with and without amount.
+    - Error mappings for missing response id/url, 401 auth failure, network unreachable, and signer rejection.
+    - Status check throwing `TRANSACTION_FAILED` naming the actual status on mismatch.
+    - Missing `withdraw_anchor_account` check.
+    - All memo types: text memo, id memo, hash memo (decoded from base64), invalid hash memo length error, and missing memo (none).
+    - Base fee stats mode and fallback to 1000 stroops.
+    - Horizon error mapping including `result_codes`.
+    - Signer rejection during payment signing.
+  - `test/integration/withdraw.interactive.test.ts`: Added interactive integration test guarded by `RUN_INTEGRATION=1 && RUN_INTERACTIVE=1` (skipped by default in CI and testnet runs).
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 85 tests across 8 test files, 3 integration test files skipped (exit code 0).
+  - `pnpm test:integration`: Ran live integration tests against Stellar testnet and `sdf-testanchor`, 2 passed (SEP-10 in 10.2s, SEP-24 in 20.2s), interactive test skipped (exit code 0).
+- **Open issues:** None.
