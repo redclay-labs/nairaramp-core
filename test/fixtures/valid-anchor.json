@@ -1,0 +1,20 @@
+{
+  "id": "test-anchor",
+  "name": "Test Anchor",
+  "homeDomain": "testanchor.stellar.org",
+  "network": "testnet",
+  "assets": [
+    {
+      "code": "NGN",
+      "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"
+    }
+  ],
+  "seps": [
+    "sep6",
+    "sep24"
+  ],
+  "countries": [
+    "NG"
+  ],
+  "verifiedAt": "2026-11-07"
+}
