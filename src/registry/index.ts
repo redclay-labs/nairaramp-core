@@ -1,4 +1,5 @@
 import { AnchorEntry, AnchorEntrySchema } from "./schema.js";
+import { NairaRampError } from "../errors.js";
 import sdfTestAnchor from "./anchors/sdf-testanchor.json";
 
 // Explicit array of static imports for browser compatibility (no fs)
@@ -16,7 +17,7 @@ const anchorMap = new Map<string, AnchorEntry>(
 export function getAnchor(id: string): AnchorEntry {
   const anchor = anchorMap.get(id);
   if (!anchor) {
-    throw new Error(`Anchor not found with id: ${id}`);
+    throw new NairaRampError("ANCHOR_NOT_FOUND", `Unknown anchor id: ${id}`);
   }
   return anchor;
 }
