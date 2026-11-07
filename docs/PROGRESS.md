@@ -93,3 +93,19 @@
   - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
   - `pnpm test`: Ran Vitest unit tests, passed 20 tests across 3 test files (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 08: createRamp, Signer and keypair signer
+
+- **What was built:**
+  - `src/signers/types.ts`: Defined `Signer` interface with `getPublicKey(): Promise<string>` and `signTransaction(xdr: string, networkPassphrase: string): Promise<string>`.
+  - `src/signers/keypair.ts`: Implemented `keypairSigner(secretKey: string): Signer` using `Keypair.fromSecret` and `TransactionBuilder.fromXDR`. Verified secret keys are never logged.
+  - `src/ramp.ts`: Implemented `createRamp({ network, anchorId, signer })` returning `Ramp` client. Bridged `Signer` to `@stellar/typescript-wallet-sdk`'s `WalletSigner` (`signWithClientAccount` and `signWithDomainAccount`). Built SEP-10 JWT authentication via `anchor.sep10.authenticate`, with base64url JWT payload parsing and proactive caching up to 60 seconds prior to `exp`. Built typed error mapping (`ANCHOR_NOT_FOUND`, `ANCHOR_UNREACHABLE`, `AUTH_FAILED`, `SIGNER_REJECTED`) retaining underlying cause.
+  - `src/index.ts`: Re-exported `Signer`, `keypairSigner`, `createRamp`, `Ramp`, and `CreateRampOptions`.
+  - `test/signers/keypair.test.ts`: Created unit tests for `keypairSigner` verifying public key derivation, Ed25519 signature generation, and rejection of invalid transaction XDR.
+  - `test/ramp.test.ts`: Created comprehensive unit test suite with mocked Wallet SDK (`vi.mock`), testing token retrieval, caching, refresh after expiry threshold with fake timers, network passphrase selection per network, and error mapping for network failures, auth failures, and signer rejections.
+- **Commands run with results:**
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 31 tests across 5 test files (exit code 0).
+- **Open issues:** None.
