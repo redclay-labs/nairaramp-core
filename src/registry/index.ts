@@ -1,8 +1,9 @@
 import { AnchorEntry, AnchorEntrySchema } from "./schema.js";
+import sdfTestAnchor from "./anchors/sdf-testanchor.json";
 
 // Explicit array of static imports for browser compatibility (no fs)
 // Anchor JSON files will be imported statically as they are registered.
-const rawAnchors: unknown[] = [];
+const rawAnchors: unknown[] = [sdfTestAnchor];
 
 export const anchors: AnchorEntry[] = rawAnchors.map((raw) =>
   AnchorEntrySchema.parse(raw)
@@ -41,3 +42,4 @@ export function listAnchors(filter?: ListAnchorsFilter): AnchorEntry[] {
 }
 
 export { AnchorEntrySchema, type AnchorEntry } from "./schema.js";
+
