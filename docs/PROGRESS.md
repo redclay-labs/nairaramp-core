@@ -71,3 +71,15 @@
   - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
   - `pnpm test`: Ran Vitest unit tests, passed 9 tests across 2 test files (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 06: Register the SDF test anchor
+
+- **What was built:** Fetched and inspected `https://testanchor.stellar.org/.well-known/stellar.toml` (observed endpoints for SEP-6, SEP-10, SEP-12, SEP-24, SEP-38, and currencies SRT, USDC, native). Queried `<TRANSFER_SERVER_SEP0024>/info` at `https://testanchor.stellar.org/sep24/info` and verified deposit and withdraw enabled status for SRT and USDC. Created `src/registry/anchors/sdf-testanchor.json` with observed configuration and verified Ed25519 issuer keys. Statically imported `sdfTestAnchor` into `src/registry/index.ts`. Added test assertion in `test/registry.test.ts` for `getAnchor("sdf-testanchor")`.
+- **Commands run with results:**
+  - `curl.exe -s https://testanchor.stellar.org/.well-known/stellar.toml`: Fetched live TOML configuration (exit code 0).
+  - `curl.exe -s https://testanchor.stellar.org/sep24/info`: Fetched SEP-24 info endpoint (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 10 tests across 2 test files (exit code 0).
+- **Open issues:** None.
