@@ -60,3 +60,14 @@
   - `pnpm typecheck`: Passed with 0 errors (exit code 0).
   - `pnpm test`: Ran unit smoke test, 1 passed (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-07 - Step 05: Anchor registry schema
+
+- **What was built:** Added `zod` (pinned to `4.6.7`) as a runtime dependency. Created `src/registry/schema.ts` exporting `AnchorEntrySchema` and `AnchorEntry` type with Zod validations for `id`, `name`, `homeDomain`, `network`, `assets` (including `@stellar/stellar-sdk` `StrKey.isValidEd25519PublicKey`), `seps`, `countries` (ISO 3166-1 alpha-2), and `verifiedAt` (valid calendar date). Created `src/registry/anchors/.gitkeep` and `src/registry/index.ts` with browser-safe static registry loading, module-load validation, `getAnchor(id)`, and `listAnchors(filter)`. Exported registry functions and types from `src/index.ts`. Created `test/fixtures/valid-anchor.json` and test suite `test/registry.test.ts` covering schema validation, field error reporting, registry query/filtering, and automatic filesystem validation of all anchors in `src/registry/anchors/`.
+- **Commands run with results:**
+  - `pnpm install`: Installed `zod@4.6.7` (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 9 tests across 2 test files (exit code 0).
+- **Open issues:** None.
