@@ -82,26 +82,31 @@ export function createRamp({
       const accountKp = PublicKeypair.fromPublicKey(publicKey);
 
       let signerError: unknown = null;
+      let pendingSign: Promise<Transaction> | null = null;
 
       const walletSigner: WalletSigner = {
-        // @ts-expect-error WalletSigner signWithClientAccount allows returning Promise<Transaction>
-        signWithClientAccount: async ({ transaction }) => {
-          try {
-            const xdr = transaction.toXDR();
-            const signedXdr = await signer.signTransaction(
-              xdr,
-              networkPassphrase
-            );
-            const signedTx = TransactionBuilder.fromXDR(
-              signedXdr,
-              networkPassphrase
-            ) as Transaction;
-            transaction.signatures.push(...signedTx.signatures);
-            return signedTx;
-          } catch (err) {
-            signerError = err;
-            throw err;
-          }
+        signWithClientAccount: ({ transaction }) => {
+          pendingSign = (async () => {
+            try {
+              const existingCount = transaction.signatures.length;
+              const xdr = transaction.toXDR();
+              const signedXdr = await signer.signTransaction(
+                xdr,
+                networkPassphrase
+              );
+              const signedTx = TransactionBuilder.fromXDR(
+                signedXdr,
+                networkPassphrase
+              ) as Transaction;
+              const newSigs = signedTx.signatures.slice(existingCount);
+              transaction.signatures.push(...newSigs);
+              return transaction;
+            } catch (err) {
+              signerError = err;
+              throw err;
+            }
+          })();
+          return pendingSign as unknown as Transaction;
         },
         signWithDomainAccount: async ({ transactionXDR }) => {
           try {
@@ -122,6 +127,20 @@ export function createRamp({
 
       try {
         const sep10 = await anchorClient.sep10();
+        const sep10Internal = sep10 as unknown as {
+          sign?: (params: unknown) => Promise<Transaction>;
+        };
+        const origSign = sep10Internal.sign;
+        if (typeof origSign === "function") {
+          sep10Internal.sign = async function (params: unknown) {
+            const tx = await origSign.call(this, params);
+            if (pendingSign) {
+              await pendingSign;
+            }
+            return tx;
+          };
+        }
+
         const result = await sep10.authenticate({
           accountKp,
           walletSigner,
