@@ -18,3 +18,5 @@
 | 2026-11-07 | Slice new signatures on transaction | TransactionBuilder.fromXDR includes original challenge server signature |
 | 2026-11-07 | Pinned @stellar/freighter-api to 6.0.1 | Official npm package for Freighter wallet integration |
 | 2026-11-07 | Pinned @creit.tech/stellar-wallets-kit to 2.8.0 | Official npm package from Creit-Tech for Stellar Wallets Kit |
+| 2026-11-07 | AnchorTransaction derived via Pick from Types.DepositTransaction & Types.WithdrawTransaction | Union type Types.AnchorTransaction distributes in Pick, intersection provides all 9 target fields |
+| 2026-11-07 | Pass optional amount in Sep24PostParams via extraFields | Wallet SDK Sep24 deposit method accepts extraFields: { amount } |
