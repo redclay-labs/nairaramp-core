@@ -246,3 +246,70 @@
   - `pnpm test`: Ran Vitest unit tests, passed 85 tests across 8 test files, 3 integration test files skipped (exit code 0).
   - `pnpm test:integration`: Ran live integration tests against Stellar testnet and `sdf-testanchor`, 2 passed (SEP-10 in 10.2s, SEP-24 in 20.2s), interactive test skipped (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-08 - Step 14: SEP-38 quotes
+
+- **What was built:**
+  - `src/quotes.ts`:
+    - Defined `Quote` and `GetPriceOptions` interfaces.
+    - Implemented `fetchPrice(options, ctx)`:
+      - Validates exactly one of `sellAmount` or `buyAmount` is provided; otherwise throws `QUOTE_UNAVAILABLE` before any network or auth call.
+      - Checks whether the anchor's registry `seps` includes `"sep38"`; otherwise throws `QUOTE_UNAVAILABLE` naming the anchor before any network or auth call.
+      - Normalizes asset strings by trimming whitespace.
+      - Authenticates via SEP-10 (`ctx.authenticate()`).
+      - Calls Wallet SDK SEP-38 `anchorClient.sep38(token).price(...)` with `sellAsset`, `buyAsset`, `sellAmount` or `buyAmount`, and `context` (defaulting to `"sep6"`).
+      - Normalizes the response into `Quote` strictly converting all numeric values to strings (`sellAsset`, `buyAsset`, `sellAmount`, `buyAmount`, `price`, `totalFee`, `feeAsset`), ensuring no floats are returned.
+      - Maps errors to `NairaRampError` (`SIGNER_REJECTED`, `AUTH_FAILED`, `QUOTE_UNAVAILABLE`, `ANCHOR_UNREACHABLE`).
+  - `src/ramp.ts`: Exposed `getPrice(options)` on `Ramp` interface and implementation, delegating to `fetchPrice`.
+  - `src/index.ts`: Re-exported `Quote` and `GetPriceOptions`.
+  - `test/quotes.test.ts`: Added unit tests covering:
+    - `QUOTE_UNAVAILABLE` when neither or both `sellAmount` and `buyAmount` are given (mock not called).
+    - `QUOTE_UNAVAILABLE` naming the anchor when `seps` lacks `sep38` (mock not called).
+    - Response normalization into `Quote` with strings and trimmed asset strings.
+    - Floating point/numeric conversions to strings (never floats).
+    - Fallback for missing fee objects.
+    - Error mapping for 400 Bad Request, network errors, 401 Unauthorized, and signer rejection.
+  - `test/integration/sep38.test.ts`: Added live testnet integration test:
+    - Reads SEP-38 `/info` from `sdf-testanchor` first.
+    - Selects a pair listed in `/info` (`stellar:SRT:...` and `iso4217:USD`).
+    - Requests a price quote via `ramp.getPrice({ sellAsset, buyAsset, sellAmount: "5" })`.
+    - Asserts that all returned fields are valid non-empty strings.
+- **Commands run with results:**
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 95 tests across 9 test files, 4 integration files skipped (exit code 0).
+  - `pnpm test:integration`: Ran live testnet integration tests, 3 passed (SEP-10 in 24.6s, SEP-24 in 34.4s, SEP-38 in 14.0s), 1 interactive test skipped (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+- **Open issues:** None.
+
+## 2026-11-08 - Step 15: Mainnet safety guard
+
+- **What was built:**
+  - `src/guard.ts`:
+    - Implemented and exported `assertNetworkAllowed({ network, anchor, allowMainnet, now })`.
+    - If `network === "mainnet"` and `allowMainnet !== true`, throws `NairaRampError("MAINNET_NOT_ALLOWED")`.
+    - If `anchor.network !== network`, throws `NairaRampError("ANCHOR_NOT_FOUND")` explaining the mismatch (naming the anchor, anchor network, and requested network).
+    - If `network === "mainnet"` and `anchor.verifiedAt` is older than 90 days relative to `now()` (or `new Date()`), throws `NairaRampError("ANCHOR_NOT_VERIFIED")` naming the anchor and its `verifiedAt`.
+    - Ensured testnet operations are otherwise unaffected.
+  - `src/ramp.ts`:
+    - Updated `CreateRampOptions` to accept optional `allowMainnet?: boolean` and `now?: () => Date`.
+    - Invoked `assertNetworkAllowed` first in `createRamp`.
+  - `src/index.ts`: Re-exported `assertNetworkAllowed` and `AssertNetworkAllowedOptions`.
+  - `test/guard.test.ts`:
+    - Added comprehensive unit test suite covering every branch with a fixed date (`2026-10-01T00:00:00.000Z`).
+    - Verified `allowMainnet` undefined and explicit false throw `MAINNET_NOT_ALLOWED`.
+    - Verified network mismatch throws `ANCHOR_NOT_FOUND` explaining the mismatch.
+    - Verified the exact 90-day boundary:
+      - 91 days (`2026-07-02`): throws `ANCHOR_NOT_VERIFIED` naming anchor and `verifiedAt`.
+      - Exact 90 days (`2026-07-03`): allowed without error.
+      - 89 days (`2026-07-04`): allowed without error.
+      - Invalid date string: throws `ANCHOR_NOT_VERIFIED`.
+    - Verified testnet remains unaffected even with stale `verifiedAt` and `allowMainnet: false`.
+    - Verified `createRamp` throws `MAINNET_NOT_ALLOWED` and `ANCHOR_NOT_FOUND` when appropriate.
+- **Commands run with results:**
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 108 tests across 10 test files, 4 integration files skipped (exit code 0).
+  - `pnpm test:integration`: Ran live testnet integration tests, 3 passed (SEP-10 in 12.2s, SEP-24 in 20.5s, SEP-38 in 19.1s), 1 interactive test skipped (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+- **Open issues:** None.
