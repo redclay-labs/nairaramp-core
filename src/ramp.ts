@@ -22,6 +22,12 @@ import {
   type WatchHandlers,
   type WatchSubscription,
 } from "./watcher.js";
+import {
+  fetchPrice,
+  type GetPriceOptions,
+  type Quote,
+} from "./quotes.js";
+import { assertNetworkAllowed } from "./guard.js";
 
 type SdkAnchorTx = Types.DepositTransaction & Types.WithdrawTransaction;
 
@@ -52,6 +58,8 @@ export interface CreateRampOptions {
   network: "testnet" | "mainnet";
   anchorId: string;
   signer: Signer;
+  allowMainnet?: boolean;
+  now?: () => Date;
 }
 
 export interface Ramp {
@@ -61,7 +69,10 @@ export interface Ramp {
   getTransaction(id: string): Promise<AnchorTransaction>;
   completeWithdrawal(id: string): Promise<{ hash: string }>;
   watch(id: string, handlers: WatchHandlers): WatchSubscription;
+  getPrice(options: GetPriceOptions): Promise<Quote>;
 }
+
+export type { GetPriceOptions, Quote };
 
 function resolvePaymentAsset(
   tx: AnchorTransaction,
@@ -191,8 +202,17 @@ export function createRamp({
   network,
   anchorId,
   signer,
+  allowMainnet,
+  now,
 }: CreateRampOptions): Ramp {
   const anchorEntry = getAnchor(anchorId);
+
+  assertNetworkAllowed({
+    network,
+    anchor: anchorEntry,
+    allowMainnet,
+    now,
+  });
 
   const wallet = network === "mainnet" ? Wallet.MainNet() : Wallet.TestNet();
   const anchorClient = wallet.anchor({ homeDomain: anchorEntry.homeDomain });
@@ -603,6 +623,17 @@ export function createRamp({
 
     watch(id: string, handlers: WatchHandlers): WatchSubscription {
       return watchTransaction(ramp, id, handlers);
+    },
+
+    async getPrice(options: GetPriceOptions): Promise<Quote> {
+      return fetchPrice(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
     },
   };
 
