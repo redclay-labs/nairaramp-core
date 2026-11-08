@@ -51,6 +51,7 @@
     "@creit.tech/stellar-wallets-kit": "2.8.0",
     "@stellar/freighter-api": "6.0.1",
     "@types/node": "26.6.6",
+    "@vitest/coverage-v8": "5.1.0",
     "cross-env": "10.1.0",
     "eslint": "10.14.0",
     "tsup": "9.0.0",
