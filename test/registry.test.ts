@@ -90,6 +90,24 @@ describe("Anchor Registry Schema", () => {
       expect(parsed.success, `File ${file} failed schema validation`).toBe(true);
     }
   });
+
+  it("registry index.ts does not import or mention drafts", () => {
+    const registryIndexPath = resolve(__dirname, "../src/registry/index.ts");
+    const content = readFileSync(registryIndexPath, "utf8");
+    expect(content.includes("drafts")).toBe(false);
+  });
+
+  it("validates all draft entries in src/registry/drafts/ against schema", () => {
+    const draftsDir = resolve(__dirname, "../src/registry/drafts");
+    const files = readdirSync(draftsDir).filter((file) => file.endsWith(".json"));
+    expect(files.length).toBeGreaterThan(0);
+
+    for (const file of files) {
+      const content = JSON.parse(readFileSync(resolve(draftsDir, file), "utf8"));
+      const parsed = AnchorEntrySchema.safeParse(content);
+      expect(parsed.success, `Draft ${file} failed schema validation`).toBe(true);
+    }
+  });
 });
 
 describe("Anchor Registry Functions", () => {
