@@ -334,3 +334,25 @@
   - `pnpm test`: Ran Vitest unit tests, passed 110 tests across 10 test files, 4 integration files skipped (exit code 0).
   - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-08 - Step 17: API docs and release preparation
+
+- **What was built:**
+  - `docs/API.md`: Comprehensive API reference covering every export of `src/index.ts` with exact TypeScript signatures, concise descriptions, thrown error codes, and practical code examples. Included the dedicated section "Exports used by nairaramp-react" listing: `createRamp`, `Ramp`, `Signer`, `TransactionStatus`, `TERMINAL_STATUSES`, `AnchorTransaction`, `NairaRampError`, `isNairaRampError`, and `NairaRampErrorCode`.
+  - `README.md`: Complete package overview explaining purpose, installation instructions (`pnpm add @nairaramp/core`), a 15-line quickstart example (`createRamp` with `sdf-testanchor`, `keypairSigner`, `deposit`, and `watch`), testnet-only notice, links to `docs/API.md`, `docs/anchors-nigeria.md`, and `CONTRIBUTING.md`, and plain text mention of related repositories (`nairaramp-react`, `nairaramp-demo`).
+  - Verified README example type correctness: Copied example to temporary `test/readme-example.ts`, ran `pnpm typecheck` (passed with code 0), and cleaned up the temporary file.
+  - `CHANGELOG.md`: Created changelog following Keep a Changelog specification with a comprehensive `0.1.0` release entry.
+  - Bumped version to `0.1.0`:
+    - Updated `package.json` to version `"0.1.0"`.
+    - Updated `src/index.ts` to `export const VERSION = "0.1.0";`.
+    - Updated `test/smoke.test.ts` to expect `"0.1.0"`.
+  - Package packaging verification:
+    - Ran `pnpm build`, followed by `npm pack --dry-run` to verify that the tarball includes strictly `dist/`, `README.md`, `LICENSE`, and `package.json`.
+    - Executed `npm pack`, installed the generated `.tgz` archive in a temporary directory outside the repository using `npm`, and confirmed ESM dynamic import `node -e "import('@nairaramp/core').then(m => console.log(Object.keys(m)))"` successfully resolved all 13 runtime exports. Cleaned up tarball and temporary directory.
+  - `docs/DECISIONS.md`: Logged Step 17 release preparation 0.1.0 decisions.
+- **Commands run with results:**
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 110 tests across 10 test files, 4 integration files skipped (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+- **Open issues:** None.
