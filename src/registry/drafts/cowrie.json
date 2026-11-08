@@ -1,0 +1,22 @@
+{
+  "id": "cowrie",
+  "name": "Cowrie",
+  "homeDomain": "cowrie.exchange",
+  "network": "mainnet",
+  "assets": [
+    {
+      "code": "NGNT",
+      "issuer": "GAWODAROMJ33V5YDFY3NPYTHVYQG7MJXVJ2ND3AOGIHYRWINES6ACCPD"
+    }
+  ],
+  "seps": [
+    "sep6",
+    "sep10",
+    "sep12"
+  ],
+  "countries": [
+    "NG"
+  ],
+  "verifiedAt": "2026-11-08"
+}
+
