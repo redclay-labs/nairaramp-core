@@ -19,6 +19,8 @@ export {
   type DepositOptions,
   type WithdrawOptions,
   type AnchorTransaction,
+  type GetPriceOptions,
+  type Quote,
 } from "./ramp.js";
 export { type Signer } from "./signers/types.js";
 export { keypairSigner } from "./signers/keypair.js";
@@ -36,3 +38,7 @@ export {
   type WatchableRamp,
   watchTransaction,
 } from "./watcher.js";
+export {
+  assertNetworkAllowed,
+  type AssertNetworkAllowedOptions,
+} from "./guard.js";
