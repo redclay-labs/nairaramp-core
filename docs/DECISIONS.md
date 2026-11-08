@@ -23,3 +23,4 @@
 | 2026-11-07 | Watcher backoff: setTimeout chains with Math.min(delay * 1.5, 30000) | Satisfies sequential polling, no overlapping polls, and clean timer teardown |
 | 2026-11-07 | Withdrawal transfer payment built via @stellar/stellar-sdk | Wallet SDK transferWithdrawalTransaction rejects missing memo with WithdrawalTxMissingMemoError; stellar-sdk cleanly supports missing memos, 180s timeout, fee stats fallback, and Signer bridging |
 | 2026-11-08 | SEP-38 price context defaults to "sep6" | Wallet SDK Sep38PriceParams requires context (Sep38PriceContext); getPrice accepts optional context and defaults to "sep6", supported by SEP-38 anchors including sdf-testanchor |
+| 2026-11-08 | Step 16 Nigerian anchor drafts | Discovered NGNC (ngnc.online) via Horizon and Cowrie (cowrie.exchange) via ezedike-evan/corridor-in-a-box. Stored draft definitions in src/registry/drafts/ with network "mainnet", isolated from production registry index |
