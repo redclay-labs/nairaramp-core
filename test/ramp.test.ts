@@ -14,6 +14,7 @@ import {
   isNairaRampError,
   type Signer,
 } from "../src/index.js";
+import * as registry from "../src/registry/index.js";
 
 const {
   mockSep10Authenticate,
@@ -178,6 +179,22 @@ describe("createRamp", () => {
   });
 
   it("uses correct network passphrase on mainnet", async () => {
+    const getAnchorSpy = vi.spyOn(registry, "getAnchor").mockReturnValue({
+      id: "sdf-testanchor",
+      name: "SDF Test Anchor",
+      homeDomain: "testanchor.stellar.org",
+      network: "mainnet",
+      assets: [
+        {
+          code: "SRT",
+          issuer: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
+        },
+      ],
+      seps: ["sep10", "sep24"],
+      countries: [],
+      verifiedAt: "2026-10-01",
+    });
+
     const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
     mockSep10Authenticate.mockImplementation(async ({ walletSigner }) => {
       const account = new Account(kp.publicKey(), "1");
@@ -203,15 +220,21 @@ describe("createRamp", () => {
       return { token };
     });
 
-    const ramp = createRamp({
-      network: "mainnet",
-      anchorId: "sdf-testanchor",
-      signer: mockSigner,
-    });
+    try {
+      const ramp = createRamp({
+        network: "mainnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+        allowMainnet: true,
+        now: () => new Date("2026-10-01"),
+      });
 
-    const result = await ramp.authenticate();
-    expect(result).toBe(token);
-    expect(mockMainNet).toHaveBeenCalled();
+      const result = await ramp.authenticate();
+      expect(result).toBe(token);
+      expect(mockMainNet).toHaveBeenCalled();
+    } finally {
+      getAnchorSpy.mockRestore();
+    }
   });
 
   it("reuses token before expiry without re-authenticating", async () => {
