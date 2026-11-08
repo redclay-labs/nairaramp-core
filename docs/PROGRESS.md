@@ -313,3 +313,24 @@
   - `pnpm test:integration`: Ran live testnet integration tests, 3 passed (SEP-10 in 12.2s, SEP-24 in 20.5s, SEP-38 in 19.1s), 1 interactive test skipped (exit code 0).
   - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-08 - Step 16: Research Nigerian anchors
+
+- **What was built:**
+  - Network and ecosystem research on Stellar anchors serving Nigeria using `curl` for all checks (Horizon mainnet, GitHub, domain `/.well-known/stellar.toml`, and advertised SEP endpoints):
+    - Verified NGNC issuer `GASBV6W7GGED66MXEVC7YZHTWWYMSVYEY35USF2HJZBLABLYIFQGXZY6` on Horizon mainnet (6,468 accounts, ~83M circulating), confirming `home_domain: "ngnc.online"`. Verified `https://ngnc.online/.well-known/stellar.toml` (HTTP 200, CORS `*`), advertised SEP-10 (`https://anchor.ngnc.online/auth`) and SEP-24 (`https://anchor.ngnc.online/sep24`) endpoints, verified `/info` (deposit & withdraw enabled for NGNC with CORS).
+    - Verified Cowrie candidate discovered via GitHub repo `ezedike-evan/corridor-in-a-box` (`corridors/ng-cowrie.corridor.yaml`). Verified issuer `GAWODAROMJ33V5YDFY3NPYTHVYQG7MJXVJ2ND3AOGIHYRWINES6ACCPD` on Horizon (8,606 accounts, ~44.8M circulating), confirming `home_domain: "cowrie.exchange"`. Verified `https://cowrie.exchange/.well-known/stellar.toml` (HTTP 200, CORS `*`), advertised SEP-10 (`https://api.cowrie.exchange/web_auth`), SEP-6 (`https://api.cowrie.exchange/transfer`), and SEP-12 (`https://api.cowrie.exchange/kyc`). Verified `/transfer/info` (deposit & withdraw enabled for NGNT with CORS, requires SEP-12 customer_id). SEP-24 is not supported.
+    - Verified other candidates from `anchors.stellar.org` (Link, Busha, Yellow Card, Paychant, Chipper Cash, BlindPay), recording "could not verify" with trimmed raw evidence when endpoints failed, were missing, or returned errors.
+  - `docs/anchors-nigeria.md`: Created research report with one section per anchor, date checked (`2026-11-08`), trimmed raw evidence, and one-line verdict. Credited `ezedike-evan/corridor-in-a-box` for Cowrie discovery.
+  - Draft registry entries in `src/registry/drafts/`:
+    - `src/registry/drafts/ngnc.json`: Registered NGNC draft entry (`network: "mainnet"`, `seps: ["sep10", "sep24"]`, `countries: ["NG"]`, `verifiedAt: "2026-11-08"`).
+    - `src/registry/drafts/cowrie.json`: Registered Cowrie draft entry (`network: "mainnet"`, `seps: ["sep6", "sep10", "sep12"]`, `countries: ["NG"]`, `verifiedAt: "2026-11-08"`).
+  - Registry isolation guard and test:
+    - `test/registry.test.ts`: Added unit tests confirming `src/registry/index.ts` does NOT mention `"drafts"`, and verifying all entries in `src/registry/drafts/` pass `AnchorEntrySchema`.
+  - `docs/DECISIONS.md`: Logged Step 16 anchor draft findings and registry isolation.
+- **Commands run with results:**
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 110 tests across 10 test files, 4 integration files skipped (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+- **Open issues:** None.
