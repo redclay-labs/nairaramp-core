@@ -356,3 +356,27 @@
   - `pnpm test`: Ran Vitest unit tests, passed 110 tests across 10 test files, 4 integration files skipped (exit code 0).
   - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-08 - Step 18: Seed issues
+
+- **What was built:**
+  - Installed `@vitest/coverage-v8@5.1.0` as exact `devDependency` to match `vitest@5.1.0`. Updated `package.json` and `VERSIONS.md`.
+  - Ran `pnpm vitest run --coverage` to inspect statement, branch, function, and line coverage across the codebase, identifying untested branches in `src/registry/index.ts`, `src/ramp.ts`, `src/quotes.ts`, and signers.
+  - Authored 9 targeted seed issues for external contributors based strictly on observed gaps:
+    - `docs/seed-issues/01.md`: Add unit test coverage for `listAnchors` filtering by country and network (Trivial / 100).
+    - `docs/seed-issues/02.md`: Add unit test coverage for browser fallback JWT decoding in `src/ramp.ts` (Trivial / 100).
+    - `docs/seed-issues/03.md`: Document integration test flags and Friendbot testnet workflow in `CONTRIBUTING.md` (Trivial / 100).
+    - `docs/seed-issues/04.md`: Promote verified Nigerian mainnet draft anchors to active registry (Medium / 150).
+    - `docs/seed-issues/05.md`: Surface detailed Horizon result codes in `completeWithdrawal` transaction failures (Medium / 150).
+    - `docs/seed-issues/06.md`: Add SEP-12 KYC status helper `ramp.getKycStatus()` (Medium / 150).
+    - `docs/seed-issues/07.md`: Probe alternate subdomains for unverified Nigerian anchor candidates (Medium / 150).
+    - `docs/seed-issues/08.md`: Implement SEP-6 non-interactive deposit flow (`ramp.depositSep6`) (High / 200).
+    - `docs/seed-issues/09.md`: Implement SEP-38 firm quote request (`ramp.requestQuote`) (High / 200).
+  - Authored `docs/seed-issues.md` indexing all 9 issues with complexity, point ratings, labels, and formatted `gh issue create` CLI commands.
+  - Logged Step 18 decisions in `docs/DECISIONS.md`.
+- **Commands run with results:**
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm typecheck`: Ran `tsc --noEmit`, passed with 0 errors (exit code 0).
+  - `pnpm test`: Ran Vitest unit tests, passed 110 tests across 10 test files, 4 integration files skipped (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+- **Open issues:** None.
