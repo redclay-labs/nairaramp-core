@@ -6,11 +6,34 @@ A TypeScript SDK that adds Pay with Naira and Cash Out to Naira flows to Stellar
 
 > **Testnet Only:** Mainnet access is disabled by default. Mainnet anchor interactions require explicit opt-in (`allowMainnet: true`) and pass automatic safety verification freshness checks.
 
+---
+
+## Features & Implementation Overview
+
+`@nairaramp/core` is built directly on top of `@stellar/typescript-wallet-sdk` and `@stellar/stellar-sdk` without reimplementing any Stellar Ecosystem Proposals (SEPs).
+
+- **SEP-10 Web Authentication**: Automatic challenge retrieval, signer bridging, signature submission, in-memory JWT caching, and near-expiry token refreshing.
+- **SEP-24 Hosted Deposit & Withdrawal**: Initiate interactive fiat deposit and withdrawal flows with upfront asset validation and error mapping.
+- **SEP-24 Withdrawal Fulfillment (`completeWithdrawal`)**: Automatically queries pending transactions, decodes text/id/base64-hash withdrawal memos, loads source accounts, fetches network fee stats from Horizon, and signs/submits payments.
+- **SEP-38 Price Quotes (`ramp.getPrice`)**: Query real-time indicative conversion rates for asset pairs with strict parameter validation and error translation.
+- **Pluggable Signers**:
+  - `keypairSigner`: In-memory secret key signer for backend/CLI testing.
+  - `freighterSigner`: Browser extension signer via `@stellar/freighter-api`.
+  - `walletsKitSigner`: Multi-wallet signer via `@creit.tech/stellar-wallets-kit` (Albedo, xBull, Hana, Rabet, etc.).
+- **Transaction Watcher (`ramp.watch`)**: Polling-based state watcher featuring sequential execution (no overlapping polls), exponential backoff, jitter, and terminal status callbacks.
+- **Mainnet Safety Guard**: Runtime guard asserting network matching, requiring explicit `allowMainnet: true` opt-in, and enforcing a 90-day verification freshness check on anchors.
+- **Nigerian Anchors Research**: Empirical network audit documenting verified Nigerian anchors (`ngnc.online`, `cowrie.exchange`) with live mainnet drafts in `src/registry/drafts/`.
+- **Unified Error Handling**: Strict typed errors via `NairaRampError` and `isNairaRampError` covering auth, unreachable anchors, quote expiration, and signer rejections.
+
+---
+
 ## Installation
 
 ```bash
 pnpm add @nairaramp/core
 ```
+
+---
 
 ## Quick Example
 
@@ -32,10 +55,56 @@ const sub = ramp.watch(id, {
 });
 ```
 
+---
+
+## Supported Signers
+
+```typescript
+// 1. Keypair Signer (secret key)
+import { keypairSigner } from "@nairaramp/core";
+const signer = keypairSigner("S...");
+
+// 2. Freighter Browser Extension
+import { freighterSigner } from "@nairaramp/core";
+const signer = freighterSigner();
+
+// 3. Stellar Wallets Kit
+import { walletsKitSigner } from "@nairaramp/core";
+import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
+const kit = new StellarWalletsKit({ ... });
+const signer = walletsKitSigner(kit);
+```
+
+---
+
+## Development & Testing
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build ESM, CJS, and TypeScript declarations
+pnpm build
+
+# Run linting and type checking
+pnpm lint
+pnpm typecheck
+
+# Run unit tests (110 tests across 10 suites)
+pnpm test
+
+# Run live Stellar testnet integration tests (requires network)
+pnpm test:integration
+```
+
+---
+
 ## Documentation
 
 - [API Reference](docs/API.md)
 - [Nigerian Stellar Anchors Research](docs/anchors-nigeria.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
+- [Seed Issues for Contributors](docs/seed-issues.md)
+- [Changelog](CHANGELOG.md)
 
 Related repositories: nairaramp-react, nairaramp-demo
