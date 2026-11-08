@@ -1,0 +1,21 @@
+{
+  "id": "ngnc",
+  "name": "NGNC",
+  "homeDomain": "ngnc.online",
+  "network": "mainnet",
+  "assets": [
+    {
+      "code": "NGNC",
+      "issuer": "GASBV6W7GGED66MXEVC7YZHTWWYMSVYEY35USF2HJZBLABLYIFQGXZY6"
+    }
+  ],
+  "seps": [
+    "sep10",
+    "sep24"
+  ],
+  "countries": [
+    "NG"
+  ],
+  "verifiedAt": "2026-11-08"
+}
+
