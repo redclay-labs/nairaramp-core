@@ -1,10 +1,30 @@
 # @nairaramp/core
 
-A TypeScript SDK that adds Pay with Naira and Cash Out to Naira flows to Stellar applications through Stellar anchors.
+[![npm version](https://img.shields.io/npm/v/@nairaramp/core.svg)](https://www.npmjs.com/package/@nairaramp/core)
+[![Release](https://img.shields.io/github/v/tag/redclay-labs/nairaramp-core?label=release)](https://github.com/redclay-labs/nairaramp-core/releases/tag/v0.1.0)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+A TypeScript SDK that adds Pay with Naira and Cash Out to Naira flows to Stellar applications through Stellar anchors. Published on npm at [`@nairaramp/core@0.1.0`](https://www.npmjs.com/package/@nairaramp/core) with git tag [`v0.1.0`](https://github.com/redclay-labs/nairaramp-core/releases/tag/v0.1.0).
 
 ## Notice
 
 > **Testnet Only:** Mainnet access is disabled by default. Mainnet anchor interactions require explicit opt-in (`allowMainnet: true`) and pass automatic safety verification freshness checks.
+
+---
+
+## Release Status (`v0.1.0`)
+
+`@nairaramp/core` is officially published on npm and tagged on GitHub:
+- **NPM Package**: [`@nairaramp/core`](https://www.npmjs.com/package/@nairaramp/core) (version `0.1.0`)
+- **Git Tag**: [`v0.1.0`](https://github.com/redclay-labs/nairaramp-core/tree/v0.1.0)
+- **Runtime**: Node.js `>= 20`, modern browsers, and ESM/CommonJS bundlers
+- **Artifacts**: ESM (`dist/index.js`), CommonJS (`dist/index.cjs`), and TypeScript declarations (`dist/index.d.ts`, `dist/index.d.cts`)
+
+Verify live package version via npm CLI:
+```bash
+npm view @nairaramp/core version
+# 0.1.0
+```
 
 ---
 
@@ -29,8 +49,17 @@ A TypeScript SDK that adds Pay with Naira and Cash Out to Naira flows to Stellar
 
 ## Installation
 
+Install the published package from the npm registry:
+
 ```bash
+# pnpm
 pnpm add @nairaramp/core
+
+# npm
+npm install @nairaramp/core
+
+# yarn
+yarn add @nairaramp/core
 ```
 
 ---
