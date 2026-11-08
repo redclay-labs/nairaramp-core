@@ -31,7 +31,7 @@ describe.skipIf(!shouldRun)("SEP-24 interactive withdrawal flow", () => {
 
       // 1. Get the asset with a deposit first if needed
       console.log("\n[Interactive Test] Initiating deposit for SRT...");
-      const depositRes = await ramp.deposit({ assetCode: "SRT", amount: "20" });
+      const depositRes = await ramp.deposit({ assetCode: "SRT", amount: "5" });
       console.log(`[Interactive Test] Deposit URL: ${depositRes.url}`);
       console.log(
         "[Interactive Test] Please open the deposit URL in your browser and complete the flow."
@@ -65,7 +65,7 @@ describe.skipIf(!shouldRun)("SEP-24 interactive withdrawal flow", () => {
       console.log("\n[Interactive Test] Starting withdrawal for SRT...");
       const withdrawRes = await ramp.withdraw({
         assetCode: "SRT",
-        amount: "10",
+        amount: "2",
       });
       console.log(`[Interactive Test] Withdrawal URL: ${withdrawRes.url}`);
       console.log(
