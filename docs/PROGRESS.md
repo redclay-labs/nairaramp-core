@@ -380,3 +380,11 @@
   - `pnpm test`: Ran Vitest unit tests, passed 110 tests across 10 test files, 4 integration files skipped (exit code 0).
   - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-09 - Step U1: Upstream back-links
+
+- **What was built:** Updated `README.md` to replace the plain-text related repositories line with links to upstream repositories: `https://github.com/redclay-labs/nairaramp-react`, `https://github.com/redclay-labs/nairaramp-demo`, the live demo `https://nairaramp-demo.vercel.app`, and the quickstart `https://github.com/redclay-labs/nairaramp-demo/blob/main/docs/quickstart.md`. Changed nothing else. Logged decision in `docs/DECISIONS.md`.
+- **Commands run with results:**
+  - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
+- **Open issues:** None.

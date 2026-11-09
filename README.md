@@ -509,8 +509,10 @@ Explore our 9 targeted seed issues in [`docs/seed-issues.md`](docs/seed-issues.m
 The NairaRamp project is structured into three dedicated repositories:
 
 - **[`@nairaramp/core`](https://github.com/redclay-labs/nairaramp-core)** (this repository): Core TypeScript SDK, anchor registry, SEP orchestration, and wallet signers.
-- **`nairaramp-react`**: React components, modal dialogs, hooks (`useRamp`, `useDeposit`, `useWithdraw`), and state providers.
-- **`nairaramp-demo`**: Interactive Next.js demo application and developer quickstart sandbox.
+- **[`nairaramp-react`](https://github.com/redclay-labs/nairaramp-react)**: React components, modal dialogs, hooks (`useRamp`, `useDeposit`, `useWithdraw`), and state providers.
+- **[`nairaramp-demo`](https://github.com/redclay-labs/nairaramp-demo)**: Interactive Next.js reference application, [Live Demo](https://nairaramp-demo.vercel.app), and [Developer Quickstart](https://github.com/redclay-labs/nairaramp-demo/blob/main/docs/quickstart.md).
+
+Related repositories: [nairaramp-react](https://github.com/redclay-labs/nairaramp-react), [nairaramp-demo](https://github.com/redclay-labs/nairaramp-demo) ([live demo](https://nairaramp-demo.vercel.app), [quickstart](https://github.com/redclay-labs/nairaramp-demo/blob/main/docs/quickstart.md))
 
 ---
 
