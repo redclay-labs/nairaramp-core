@@ -44,6 +44,7 @@ Initializes a new `Ramp` instance configured for a specific anchor and network, 
 - `options.anchorId`: `string` - Registered anchor identifier (e.g., `"sdf-testanchor"`).
 - `options.signer`: `Signer` - Signer instance implementing `getPublicKey` and `signTransaction`.
 - `options.clientDomain?`: `string` - Optional client domain for SEP-10 authentication.
+- `options.horizonUrl?`: `string` - Optional custom Horizon RPC URL (defaults to public Horizon for the selected network).
 - `options.allowMainnet?`: `boolean` - Required `true` when `network === "mainnet"`.
 - `options.now?`: `() => Date` - Optional clock override for verifying anchor freshness (defaults to system clock).
 
@@ -202,6 +203,7 @@ interface CreateRampOptions {
   anchorId: string;
   signer: Signer;
   clientDomain?: string;
+  horizonUrl?: string;
   allowMainnet?: boolean;
   now?: () => Date;
 }

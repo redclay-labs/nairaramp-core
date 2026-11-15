@@ -1161,4 +1161,59 @@ describe("createRamp", () => {
       }
     });
   });
+
+  describe("contract alignment & auth deduplication", () => {
+    it("exposes readonly anchor metadata on the Ramp client", () => {
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      expect(ramp.anchor.id).toBe("sdf-testanchor");
+      expect(ramp.anchor.homeDomain).toBe("testanchor.stellar.org");
+    });
+
+    it("forwards optional clientDomain to sep10.authenticate", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+        clientDomain: "wallet.nairaramp.example",
+      });
+
+      await ramp.authenticate();
+
+      expect(mockSep10Authenticate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientDomain: "wallet.nairaramp.example",
+        })
+      );
+    });
+
+    it("deduplicates concurrent authenticate() calls into a single SEP-10 flow", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve({ token }), 25))
+      );
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const [t1, t2] = await Promise.all([
+        ramp.authenticate(),
+        ramp.authenticate(),
+      ]);
+
+      expect(t1).toBe(token);
+      expect(t2).toBe(token);
+      expect(mockSep10Authenticate).toHaveBeenCalledTimes(1);
+    });
+  });
 });

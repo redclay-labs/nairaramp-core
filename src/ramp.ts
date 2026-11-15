@@ -14,7 +14,7 @@ import {
   Wallet,
   type WalletSigner,
 } from "@stellar/typescript-wallet-sdk";
-import { getAnchor } from "./registry/index.js";
+import { getAnchor, type AnchorEntry } from "./registry/index.js";
 import { isNairaRampError, NairaRampError } from "./errors.js";
 import type { Signer } from "./signers/types.js";
 import {
@@ -58,11 +58,14 @@ export interface CreateRampOptions {
   network: "testnet" | "mainnet";
   anchorId: string;
   signer: Signer;
+  clientDomain?: string;
+  horizonUrl?: string;
   allowMainnet?: boolean;
   now?: () => Date;
 }
 
 export interface Ramp {
+  readonly anchor: AnchorEntry;
   authenticate(): Promise<string>;
   deposit(options: DepositOptions): Promise<{ id: string; url: string }>;
   withdraw(options: WithdrawOptions): Promise<{ id: string; url: string }>;
@@ -202,6 +205,8 @@ export function createRamp({
   network,
   anchorId,
   signer,
+  clientDomain,
+  horizonUrl,
   allowMainnet,
   now,
 }: CreateRampOptions): Ramp {
@@ -221,8 +226,111 @@ export function createRamp({
 
   let cachedToken: string | null = null;
   let cachedTokenExpSec: number | null = null;
+  let authInFlight: Promise<string> | null = null;
+
+  async function runAuthenticate(): Promise<string> {
+    let publicKey: string;
+    try {
+      publicKey = await signer.getPublicKey();
+    } catch (err) {
+      throw new NairaRampError(
+        "SIGNER_REJECTED",
+        "Signer failed to provide public key",
+        { cause: err }
+      );
+    }
+
+    const accountKp = PublicKeypair.fromPublicKey(publicKey);
+
+    let signerError: unknown = null;
+    let pendingSign: Promise<Transaction> | null = null;
+
+    const walletSigner: WalletSigner = {
+      signWithClientAccount: ({ transaction }) => {
+        pendingSign = (async () => {
+          try {
+            const existingCount = transaction.signatures.length;
+            const xdr = transaction.toXDR();
+            const signedXdr = await signer.signTransaction(
+              xdr,
+              networkPassphrase
+            );
+            const signedTx = TransactionBuilder.fromXDR(
+              signedXdr,
+              networkPassphrase
+            ) as Transaction;
+            const newSigs = signedTx.signatures.slice(existingCount);
+            transaction.signatures.push(...newSigs);
+            return transaction;
+          } catch (err) {
+            signerError = err;
+            throw err;
+          }
+        })();
+        return pendingSign as unknown as Transaction;
+      },
+      signWithDomainAccount: async ({ transactionXDR }) => {
+        try {
+          const signedXdr = await signer.signTransaction(
+            transactionXDR,
+            networkPassphrase
+          );
+          return TransactionBuilder.fromXDR(
+            signedXdr,
+            networkPassphrase
+          ) as Transaction;
+        } catch (err) {
+          signerError = err;
+          throw err;
+        }
+      },
+    };
+
+    try {
+      const sep10 = await anchorClient.sep10();
+      const sep10Internal = sep10 as unknown as {
+        sign?: (params: unknown) => Promise<Transaction>;
+      };
+      const origSign = sep10Internal.sign;
+      if (typeof origSign === "function") {
+        sep10Internal.sign = async function (params: unknown) {
+          const tx = await origSign.call(this, params);
+          if (pendingSign) {
+            await pendingSign;
+          }
+          return tx;
+        };
+      }
+
+      const result = await sep10.authenticate({
+        accountKp,
+        walletSigner,
+        ...(clientDomain ? { clientDomain } : {}),
+      });
+
+      const token = typeof result === "string" ? result : result.token;
+      if (!token || typeof token !== "string") {
+        throw new NairaRampError(
+          "AUTH_FAILED",
+          "Authentication returned invalid token"
+        );
+      }
+
+      const payload = decodeJwtPayload(token);
+      const exp = typeof payload?.exp === "number" ? payload.exp : null;
+
+      cachedToken = token;
+      cachedTokenExpSec = exp;
+
+      return token;
+    } catch (err) {
+      mapAnchorError(err, anchorEntry.homeDomain, signerError);
+    }
+  }
 
   const ramp: Ramp = {
+    anchor: anchorEntry,
+
     async authenticate(): Promise<string> {
       const nowSec = Math.floor(Date.now() / 1000);
       if (
@@ -233,102 +341,14 @@ export function createRamp({
         return cachedToken;
       }
 
-      let publicKey: string;
-      try {
-        publicKey = await signer.getPublicKey();
-      } catch (err) {
-        throw new NairaRampError(
-          "SIGNER_REJECTED",
-          "Signer failed to provide public key",
-          { cause: err }
-        );
+      if (authInFlight) {
+        return authInFlight;
       }
 
-      const accountKp = PublicKeypair.fromPublicKey(publicKey);
-
-      let signerError: unknown = null;
-      let pendingSign: Promise<Transaction> | null = null;
-
-      const walletSigner: WalletSigner = {
-        signWithClientAccount: ({ transaction }) => {
-          pendingSign = (async () => {
-            try {
-              const existingCount = transaction.signatures.length;
-              const xdr = transaction.toXDR();
-              const signedXdr = await signer.signTransaction(
-                xdr,
-                networkPassphrase
-              );
-              const signedTx = TransactionBuilder.fromXDR(
-                signedXdr,
-                networkPassphrase
-              ) as Transaction;
-              const newSigs = signedTx.signatures.slice(existingCount);
-              transaction.signatures.push(...newSigs);
-              return transaction;
-            } catch (err) {
-              signerError = err;
-              throw err;
-            }
-          })();
-          return pendingSign as unknown as Transaction;
-        },
-        signWithDomainAccount: async ({ transactionXDR }) => {
-          try {
-            const signedXdr = await signer.signTransaction(
-              transactionXDR,
-              networkPassphrase
-            );
-            return TransactionBuilder.fromXDR(
-              signedXdr,
-              networkPassphrase
-            ) as Transaction;
-          } catch (err) {
-            signerError = err;
-            throw err;
-          }
-        },
-      };
-
-      try {
-        const sep10 = await anchorClient.sep10();
-        const sep10Internal = sep10 as unknown as {
-          sign?: (params: unknown) => Promise<Transaction>;
-        };
-        const origSign = sep10Internal.sign;
-        if (typeof origSign === "function") {
-          sep10Internal.sign = async function (params: unknown) {
-            const tx = await origSign.call(this, params);
-            if (pendingSign) {
-              await pendingSign;
-            }
-            return tx;
-          };
-        }
-
-        const result = await sep10.authenticate({
-          accountKp,
-          walletSigner,
-        });
-
-        const token = typeof result === "string" ? result : result.token;
-        if (!token || typeof token !== "string") {
-          throw new NairaRampError(
-            "AUTH_FAILED",
-            "Authentication returned invalid token"
-          );
-        }
-
-        const payload = decodeJwtPayload(token);
-        const exp = typeof payload?.exp === "number" ? payload.exp : null;
-
-        cachedToken = token;
-        cachedTokenExpSec = exp;
-
-        return token;
-      } catch (err) {
-        mapAnchorError(err, anchorEntry.homeDomain, signerError);
-      }
+      authInFlight = runAuthenticate().finally(() => {
+        authInFlight = null;
+      });
+      return authInFlight;
     },
 
     async deposit(options: DepositOptions): Promise<{ id: string; url: string }> {
@@ -521,11 +541,12 @@ export function createRamp({
         );
       }
 
-      const horizonUrl =
-        network === "mainnet"
+      const resolvedHorizonUrl =
+        horizonUrl ??
+        (network === "mainnet"
           ? "https://horizon.stellar.org"
-          : "https://horizon-testnet.stellar.org";
-      const server = new Horizon.Server(horizonUrl);
+          : "https://horizon-testnet.stellar.org");
+      const server = new Horizon.Server(resolvedHorizonUrl);
 
       let baseFee = "1000";
       try {
