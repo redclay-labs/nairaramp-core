@@ -25,8 +25,12 @@ import {
 } from "./watcher.js";
 import {
   fetchPrice,
+  requestFirmQuote,
+  fetchQuoteById,
+  type FirmQuote,
   type GetPriceOptions,
   type Quote,
+  type RequestQuoteOptions,
 } from "./quotes.js";
 import {
   fetchKycStatus,
@@ -94,13 +98,20 @@ export interface Ramp {
     options?: WatchOptions
   ): WatchSubscription;
   getPrice(options: GetPriceOptions): Promise<Quote>;
+  requestQuote(options: RequestQuoteOptions): Promise<FirmQuote>;
+  getQuote(quoteId: string): Promise<FirmQuote>;
   getKycStatus(options?: KycStatusOptions): Promise<KycStatusResult>;
   putKyc(options: PutKycOptions): Promise<PutKycResult>;
   depositSep6(options: Sep6DepositOptions): Promise<Sep6DepositResult>;
   withdrawSep6(options: Sep6WithdrawOptions): Promise<Sep6WithdrawResult>;
 }
 
-export type { GetPriceOptions, Quote };
+export type {
+  FirmQuote,
+  GetPriceOptions,
+  Quote,
+  RequestQuoteOptions,
+};
 export type {
   KycStatus,
   KycField,
@@ -706,6 +717,28 @@ export function createRamp({
 
     async getPrice(options: GetPriceOptions): Promise<Quote> {
       return fetchPrice(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
+    },
+
+    async requestQuote(options: RequestQuoteOptions): Promise<FirmQuote> {
+      return requestFirmQuote(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
+    },
+
+    async getQuote(quoteId: string): Promise<FirmQuote> {
+      return fetchQuoteById(quoteId, {
         anchor: anchorEntry,
         anchorClient,
         authenticate: async () => {

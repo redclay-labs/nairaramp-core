@@ -21,6 +21,8 @@ export {
   type AnchorTransaction,
   type GetPriceOptions,
   type Quote,
+  type RequestQuoteOptions,
+  type FirmQuote,
   type KycStatus,
   type KycField,
   type KycProvidedField,

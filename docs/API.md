@@ -192,6 +192,24 @@ const quote = await ramp.getPrice({
 console.log("Rate:", quote.price, "Buy amount:", quote.buyAmount);
 ```
 
+#### `ramp.requestQuote(options: RequestQuoteOptions): Promise<FirmQuote>`
+Requests a binding SEP-38 firm quote (`POST /quote`) with an `id` and `expiresAt` timestamp.
+
+**Throws:**
+- `QUOTE_UNAVAILABLE` - If amount options are invalid or anchor lacks `sep38`.
+- `QUOTE_EXPIRED` - If the returned quote is already expired.
+- `AUTH_FAILED` - If authentication fails.
+- `ANCHOR_UNREACHABLE` - If anchor endpoint is unreachable.
+
+#### `ramp.getQuote(quoteId: string): Promise<FirmQuote>`
+Fetches an existing SEP-38 firm quote (`GET /quote/:id`).
+
+**Throws:**
+- `QUOTE_UNAVAILABLE` - If `quoteId` is empty, quote is not found, or anchor lacks `sep38`.
+- `QUOTE_EXPIRED` - If the quote has expired.
+- `AUTH_FAILED` - If authentication fails.
+- `ANCHOR_UNREACHABLE` - If anchor endpoint is unreachable.
+
 #### `ramp.getKycStatus(options?: KycStatusOptions): Promise<KycStatusResult>`
 Queries SEP-12 customer KYC status and any required or provided fields. Checks that the anchor advertises `sep12` before authenticating.
 

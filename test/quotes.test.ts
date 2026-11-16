@@ -10,6 +10,8 @@ import { fetchPrice, type QuoteClientContext } from "../src/quotes.js";
 const {
   mockSep10Authenticate,
   mockSep38Price,
+  mockSep38RequestQuote,
+  mockSep38GetQuote,
   mockSep38,
   mockTestNet,
   mockMainNet,
@@ -19,8 +21,12 @@ const {
     authenticate: mockSep10Authenticate,
   });
   const mockSep38Price = vi.fn();
+  const mockSep38RequestQuote = vi.fn();
+  const mockSep38GetQuote = vi.fn();
   const mockSep38 = vi.fn().mockReturnValue({
     price: mockSep38Price,
+    requestQuote: mockSep38RequestQuote,
+    getQuote: mockSep38GetQuote,
   });
   const mockAnchor = vi.fn().mockReturnValue({
     sep10: mockSep10,
@@ -37,6 +43,8 @@ const {
     mockSep10Authenticate,
     mockSep10,
     mockSep38Price,
+    mockSep38RequestQuote,
+    mockSep38GetQuote,
     mockSep38,
     mockAnchor,
     mockTestNet,
@@ -350,6 +358,130 @@ describe("SEP-38 quotes (ramp.getPrice & quotes.ts)", () => {
         })
       ).rejects.toMatchObject({
         code: "SIGNER_REJECTED",
+      });
+    });
+  });
+
+  describe("Firm quotes (requestQuote & getQuote)", () => {
+    it("requests a firm quote and normalizes FirmQuote fields", async () => {
+      const futureIso = new Date(Date.now() + 600_000).toISOString();
+      mockSep38RequestQuote.mockResolvedValue({
+        id: "quote-firm-1",
+        expires_at: futureIso,
+        total_price: "1620.50",
+        price: "1600.00",
+        sell_asset: "iso4217:NGN",
+        sell_amount: "16205",
+        buy_asset: "stellar:USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        buy_amount: "10",
+        fee: { total: "205", asset: "iso4217:NGN" },
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const quote = await ramp.requestQuote({
+        sellAsset: "  iso4217:NGN ",
+        buyAsset: " stellar:USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN ",
+        buyAmount: "10",
+        context: "sep6",
+        countryCode: "NG",
+      });
+
+      expect(mockSep38RequestQuote).toHaveBeenCalledWith({
+        sell_asset: "iso4217:NGN",
+        buy_asset: "stellar:USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        buy_amount: "10",
+        context: "sep6",
+        country_code: "NG",
+      });
+      expect(quote).toEqual({
+        id: "quote-firm-1",
+        expiresAt: futureIso,
+        totalPrice: "1620.50",
+        price: "1600.00",
+        sellAsset: "iso4217:NGN",
+        sellAmount: "16205",
+        buyAsset: "stellar:USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        buyAmount: "10",
+        totalFee: "205",
+        feeAsset: "iso4217:NGN",
+      });
+    });
+
+    it("throws QUOTE_EXPIRED if returned firm quote expires_at is in the past", async () => {
+      mockSep38RequestQuote.mockResolvedValue({
+        id: "quote-stale-1",
+        expires_at: "2020-01-01T00:00:00Z",
+        total_price: "1600",
+        price: "1600",
+        sell_asset: "iso4217:NGN",
+        sell_amount: "1600",
+        buy_asset: "iso4217:USD",
+        buy_amount: "1",
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(
+        ramp.requestQuote({
+          sellAsset: "iso4217:NGN",
+          buyAsset: "iso4217:USD",
+          sellAmount: "1600",
+        })
+      ).rejects.toMatchObject({
+        code: "QUOTE_EXPIRED",
+      });
+    });
+
+    it("fetches an existing firm quote via getQuote and rejects empty quoteId", async () => {
+      const futureIso = new Date(Date.now() + 300_000).toISOString();
+      mockSep38GetQuote.mockResolvedValue({
+        id: "quote-firm-2",
+        expires_at: futureIso,
+        total_price: "1.1",
+        price: "1.0",
+        sell_asset: "iso4217:USD",
+        sell_amount: "11",
+        buy_asset: "iso4217:NGN",
+        buy_amount: "10",
+        fee: { total: "1", asset: "iso4217:USD" },
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(ramp.getQuote("   ")).rejects.toMatchObject({
+        code: "QUOTE_UNAVAILABLE",
+      });
+
+      const quote = await ramp.getQuote("quote-firm-2");
+      expect(mockSep38GetQuote).toHaveBeenCalledWith("quote-firm-2");
+      expect(quote.id).toBe("quote-firm-2");
+      expect(quote.expiresAt).toBe(futureIso);
+    });
+
+    it("maps expired quote error from anchor to QUOTE_EXPIRED", async () => {
+      mockSep38GetQuote.mockRejectedValue(new Error("400 Quote has expired"));
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(ramp.getQuote("quote-old")).rejects.toMatchObject({
+        code: "QUOTE_EXPIRED",
       });
     });
   });
