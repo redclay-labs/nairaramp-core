@@ -77,7 +77,7 @@ interface Ramp {
   withdraw(options: WithdrawOptions): Promise<{ id: string; url: string }>;
   getTransaction(id: string): Promise<AnchorTransaction>;
   completeWithdrawal(id: string): Promise<{ hash: string }>;
-  watch(id: string, handlers: WatchHandlers): WatchSubscription;
+  watch(id: string, handlers: WatchHandlers, options?: WatchOptions): WatchSubscription;
   getPrice(options: GetPriceOptions): Promise<Quote>;
 }
 ```
@@ -374,8 +374,18 @@ interface WatchableRamp {
 }
 ```
 
-### `watchTransaction(ramp: WatchableRamp, id: string, handlers: WatchHandlers): WatchSubscription`
-Standalone polling watcher function with exponential backoff and jitter.
+### `WatchOptions`
+```typescript
+interface WatchOptions {
+  initialDelayMs?: number;
+  maxDelayMs?: number;
+  jitterRatio?: number;
+  random?: () => number;
+}
+```
+
+### `watchTransaction(ramp: WatchableRamp, id: string, handlers: WatchHandlers, options?: WatchOptions): WatchSubscription`
+Standalone polling watcher function with exponential backoff and bounded ±15% jitter by default.
 
 ---
 

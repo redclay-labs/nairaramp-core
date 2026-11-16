@@ -20,6 +20,7 @@ import type { Signer } from "./signers/types.js";
 import {
   watchTransaction,
   type WatchHandlers,
+  type WatchOptions,
   type WatchSubscription,
 } from "./watcher.js";
 import {
@@ -71,7 +72,11 @@ export interface Ramp {
   withdraw(options: WithdrawOptions): Promise<{ id: string; url: string }>;
   getTransaction(id: string): Promise<AnchorTransaction>;
   completeWithdrawal(id: string): Promise<{ hash: string }>;
-  watch(id: string, handlers: WatchHandlers): WatchSubscription;
+  watch(
+    id: string,
+    handlers: WatchHandlers,
+    options?: WatchOptions
+  ): WatchSubscription;
   getPrice(options: GetPriceOptions): Promise<Quote>;
 }
 
@@ -656,8 +661,12 @@ export function createRamp({
       }
     },
 
-    watch(id: string, handlers: WatchHandlers): WatchSubscription {
-      return watchTransaction(ramp, id, handlers);
+    watch(
+      id: string,
+      handlers: WatchHandlers,
+      options?: WatchOptions
+    ): WatchSubscription {
+      return watchTransaction(ramp, id, handlers, options);
     },
 
     async getPrice(options: GetPriceOptions): Promise<Quote> {

@@ -51,17 +51,54 @@ export interface WatchableRamp {
   getTransaction(id: string): Promise<AnchorTransaction>;
 }
 
+export interface WatchOptions {
+  /** Initial polling delay in milliseconds (default: 2000). */
+  initialDelayMs?: number;
+  /** Maximum polling delay in milliseconds (default: 30000). */
+  maxDelayMs?: number;
+  /** Bounded jitter ratio applied to each scheduled delay (default: 0.15 for ±15%). Set to 0 to disable. */
+  jitterRatio?: number;
+  /** Optional PRNG returning [0, 1) for deterministic testing (default: Math.random). */
+  random?: () => number;
+}
+
+function applyJitter(
+  delayMs: number,
+  jitterRatio: number,
+  random: () => number
+): number {
+  if (jitterRatio <= 0) {
+    return delayMs;
+  }
+  const clampedRatio = Math.min(jitterRatio, 0.5);
+  const factor = 1 + (random() * 2 - 1) * clampedRatio;
+  return Math.max(100, delayMs * factor);
+}
+
 export function watchTransaction(
   ramp: WatchableRamp,
   id: string,
-  handlers: WatchHandlers
+  handlers: WatchHandlers,
+  options?: WatchOptions
 ): WatchSubscription {
+  const initialDelayMs = options?.initialDelayMs ?? 2000;
+  const maxDelayMs = options?.maxDelayMs ?? 30000;
+  const jitterRatio = options?.jitterRatio ?? 0.15;
+  const random = options?.random ?? Math.random;
+
   let stopped = false;
   let timerId: ReturnType<typeof setTimeout> | null = null;
   let isPolling = false;
-  let currentDelay = 2000;
+  let currentDelay = initialDelayMs;
   let consecutiveFailures = 0;
   let lastStatus: string | null = null;
+
+  function scheduleNext(): void {
+    const nextDelay = applyJitter(currentDelay, jitterRatio, random);
+    timerId = setTimeout(() => {
+      void poll();
+    }, nextDelay);
+  }
 
   async function poll(): Promise<void> {
     if (stopped || isPolling) {
@@ -82,13 +119,13 @@ export function watchTransaction(
       if (lastStatus === null) {
         lastStatus = tx.status;
         handlers.onStatus?.(tx.status, tx);
-        currentDelay = Math.min(currentDelay * 1.5, 30000);
+        currentDelay = Math.min(currentDelay * 1.5, maxDelayMs);
       } else if (tx.status !== lastStatus) {
         lastStatus = tx.status;
-        currentDelay = 2000;
+        currentDelay = initialDelayMs;
         handlers.onStatus?.(tx.status, tx);
       } else {
-        currentDelay = Math.min(currentDelay * 1.5, 30000);
+        currentDelay = Math.min(currentDelay * 1.5, maxDelayMs);
       }
 
       if (tx.status === "completed") {
@@ -107,9 +144,7 @@ export function watchTransaction(
       }
 
       // Non-terminal status (including unknown status strings): schedule next poll
-      timerId = setTimeout(() => {
-        void poll();
-      }, currentDelay);
+      scheduleNext();
     } catch (err) {
       if (stopped) {
         return;
@@ -129,19 +164,15 @@ export function watchTransaction(
         return;
       }
 
-      currentDelay = Math.min(currentDelay * 1.5, 30000);
-      timerId = setTimeout(() => {
-        void poll();
-      }, currentDelay);
+      currentDelay = Math.min(currentDelay * 1.5, maxDelayMs);
+      scheduleNext();
     } finally {
       isPolling = false;
     }
   }
 
-  // Initial poll after 2000ms
-  timerId = setTimeout(() => {
-    void poll();
-  }, currentDelay);
+  // Initial poll
+  scheduleNext();
 
   return {
     stop(): void {

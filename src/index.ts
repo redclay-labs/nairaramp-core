@@ -34,6 +34,7 @@ export {
   type TransactionStatus,
   type TerminalStatus,
   type WatchHandlers,
+  type WatchOptions,
   type WatchSubscription,
   type WatchableRamp,
   watchTransaction,

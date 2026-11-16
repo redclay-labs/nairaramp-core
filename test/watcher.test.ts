@@ -16,6 +16,8 @@ describe("Transaction watcher", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    // Neutralize default ±15% jitter for deterministic backoff assertions unless overridden
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
     mockGetTransaction =
       vi.fn<(id: string) => Promise<AnchorTransaction>>();
     mockRamp = {
@@ -460,5 +462,63 @@ describe("Transaction watcher", () => {
       "too_large",
       "error",
     ]);
+  });
+
+  it("applies bounded ±15% jitter by default and supports WatchOptions overrides", async () => {
+    const tx: AnchorTransaction = {
+      id: "tx-jitter",
+      status: "incomplete" as unknown as AnchorTransaction["status"],
+      amount_in: "10.0",
+      amount_out: "9.5",
+      stellar_transaction_id: undefined,
+      withdraw_anchor_account: undefined,
+      withdraw_memo: undefined,
+      withdraw_memo_type: undefined as unknown as AnchorTransaction["withdraw_memo_type"],
+      message: undefined,
+    };
+    mockGetTransaction.mockResolvedValue(tx);
+
+    // Lower bound: random = 0 -> 2000 * (1 - 0.15) = 1700ms
+    const subMin = watchTransaction(
+      mockRamp,
+      "tx-jitter",
+      {},
+      { random: () => 0 }
+    );
+    await vi.advanceTimersByTimeAsync(1699);
+    expect(mockGetTransaction).toHaveBeenCalledTimes(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockGetTransaction).toHaveBeenCalledTimes(1);
+    subMin.stop();
+
+    mockGetTransaction.mockClear();
+
+    // Upper bound: random = 1 -> 2000 * (1 + 0.15) = 2300ms
+    const subMax = watchTransaction(
+      mockRamp,
+      "tx-jitter",
+      {},
+      { random: () => 1 }
+    );
+    await vi.advanceTimersByTimeAsync(2299);
+    expect(mockGetTransaction).toHaveBeenCalledTimes(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockGetTransaction).toHaveBeenCalledTimes(1);
+    subMax.stop();
+
+    mockGetTransaction.mockClear();
+
+    // Custom initialDelayMs with jitter disabled
+    const subCustom = watchTransaction(
+      mockRamp,
+      "tx-jitter",
+      {},
+      { initialDelayMs: 500, maxDelayMs: 1000, jitterRatio: 0 }
+    );
+    await vi.advanceTimersByTimeAsync(499);
+    expect(mockGetTransaction).toHaveBeenCalledTimes(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockGetTransaction).toHaveBeenCalledTimes(1);
+    subCustom.stop();
   });
 });
