@@ -28,6 +28,14 @@ import {
   type GetPriceOptions,
   type Quote,
 } from "./quotes.js";
+import {
+  fetchKycStatus,
+  submitKyc,
+  type KycStatusOptions,
+  type KycStatusResult,
+  type PutKycOptions,
+  type PutKycResult,
+} from "./kyc.js";
 import { assertNetworkAllowed } from "./guard.js";
 
 type SdkAnchorTx = Types.DepositTransaction & Types.WithdrawTransaction;
@@ -78,9 +86,20 @@ export interface Ramp {
     options?: WatchOptions
   ): WatchSubscription;
   getPrice(options: GetPriceOptions): Promise<Quote>;
+  getKycStatus(options?: KycStatusOptions): Promise<KycStatusResult>;
+  putKyc(options: PutKycOptions): Promise<PutKycResult>;
 }
 
 export type { GetPriceOptions, Quote };
+export type {
+  KycStatus,
+  KycField,
+  KycProvidedField,
+  KycStatusOptions,
+  KycStatusResult,
+  PutKycOptions,
+  PutKycResult,
+} from "./kyc.js";
 
 function resolvePaymentAsset(
   tx: AnchorTransaction,
@@ -671,6 +690,30 @@ export function createRamp({
 
     async getPrice(options: GetPriceOptions): Promise<Quote> {
       return fetchPrice(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
+    },
+
+    async getKycStatus(
+      options: KycStatusOptions = {}
+    ): Promise<KycStatusResult> {
+      return fetchKycStatus(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
+    },
+
+    async putKyc(options: PutKycOptions): Promise<PutKycResult> {
+      return submitKyc(options, {
         anchor: anchorEntry,
         anchorClient,
         authenticate: async () => {

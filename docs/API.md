@@ -192,6 +192,37 @@ const quote = await ramp.getPrice({
 console.log("Rate:", quote.price, "Buy amount:", quote.buyAmount);
 ```
 
+#### `ramp.getKycStatus(options?: KycStatusOptions): Promise<KycStatusResult>`
+Queries SEP-12 customer KYC status and any required or provided fields. Checks that the anchor advertises `sep12` before authenticating.
+
+**Parameters:**
+- `options?.id`: `string` - Anchor customer ID.
+- `options?.type`: `string` - Customer type (e.g. `"sep6-deposit"`).
+- `options?.memo`: `string` - Optional customer memo.
+- `options?.lang`: `string` - Preferred language code.
+- `options?.transactionId`: `string` - Associated transaction ID.
+
+**Throws:**
+- `KYC_REQUIRED` - If no customer record exists (404 / `CustomerNotFoundError`).
+- `AUTH_FAILED` - If authentication fails or anchor returns 401/403.
+- `ANCHOR_UNREACHABLE` - If anchor does not advertise `sep12` or endpoint fails.
+
+#### `ramp.putKyc(options: PutKycOptions): Promise<PutKycResult>`
+Submits or updates SEP-12 customer KYC fields (`sep9Info` and optional binary documents `sep9BinaryInfo`). Calls `sep12.update` when `options.id` is provided, or `sep12.add` otherwise.
+
+**Parameters:**
+- `options.id?`: `string` - Existing customer ID (triggers update instead of add).
+- `options.type?`: `string` - Customer type.
+- `options.memo?`: `string` - Optional memo.
+- `options.transactionId?`: `string` - Associated transaction ID.
+- `options.fields?`: `Record<string, string>` - SEP-9 text fields.
+- `options.binaryFields?`: `Record<string, Uint8Array>` - SEP-9 binary fields (e.g., ID photos).
+
+**Throws:**
+- `KYC_REQUIRED` - If no fields are supplied or anchor rejects with HTTP 400.
+- `AUTH_FAILED` - If authentication fails or anchor returns 401/403.
+- `ANCHOR_UNREACHABLE` - If anchor does not advertise `sep12` or endpoint fails.
+
 ---
 
 ## 3. Types for Core Ramp

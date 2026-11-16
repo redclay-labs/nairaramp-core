@@ -21,6 +21,13 @@ export {
   type AnchorTransaction,
   type GetPriceOptions,
   type Quote,
+  type KycStatus,
+  type KycField,
+  type KycProvidedField,
+  type KycStatusOptions,
+  type KycStatusResult,
+  type PutKycOptions,
+  type PutKycResult,
 } from "./ramp.js";
 export { type Signer } from "./signers/types.js";
 export { keypairSigner } from "./signers/keypair.js";
