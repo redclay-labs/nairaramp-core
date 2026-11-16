@@ -124,5 +124,58 @@ describe("walletsKitSigner", () => {
       }
     }
   });
+
+  it("supports getPublicKey() fallback, string responses, and signedXDR", async () => {
+    const kit = {
+      getPublicKey: vi.fn().mockResolvedValue(testAddress),
+      signTransaction: vi.fn().mockResolvedValue({ signedXDR: signedXdr }),
+    };
+    const signer = walletsKitSigner(kit as unknown as WalletsKitLike);
+
+    await expect(signer.getPublicKey()).resolves.toBe(testAddress);
+    await expect(signer.signTransaction(testXdr, passphrase)).resolves.toBe(
+      signedXdr
+    );
+
+    kit.signTransaction.mockResolvedValue(signedXdr);
+    await expect(signer.signTransaction(testXdr, passphrase)).resolves.toBe(
+      signedXdr
+    );
+  });
+
+  it("maps missing methods, empty addresses, object errors, and empty signed XDR to SIGNER_REJECTED", async () => {
+    const noAddrKit = {
+      signTransaction: vi.fn(),
+    } as unknown as WalletsKitLike;
+    await expect(walletsKitSigner(noAddrKit).getPublicKey()).rejects.toMatchObject({
+      code: "SIGNER_REJECTED",
+    });
+
+    mockKit.getAddress.mockResolvedValue({ address: "" });
+    await expect(
+      walletsKitSigner(mockKit as unknown as WalletsKitLike).getPublicKey()
+    ).rejects.toMatchObject({ code: "SIGNER_REJECTED" });
+
+    mockKit.getAddress.mockResolvedValue({ error: { code: 500 } });
+    await expect(
+      walletsKitSigner(mockKit as unknown as WalletsKitLike).getPublicKey()
+    ).rejects.toMatchObject({ code: "SIGNER_REJECTED" });
+
+    mockKit.getAddress.mockResolvedValue({ address: testAddress });
+    mockKit.signTransaction.mockResolvedValue({ signedTxXdr: "" });
+    await expect(
+      walletsKitSigner(mockKit as unknown as WalletsKitLike).signTransaction(
+        testXdr,
+        passphrase
+      )
+    ).rejects.toMatchObject({ code: "SIGNER_REJECTED" });
+
+    const noSignKit = {
+      getAddress: vi.fn().mockResolvedValue({ address: testAddress }),
+    } as unknown as WalletsKitLike;
+    await expect(
+      walletsKitSigner(noSignKit).signTransaction(testXdr, passphrase)
+    ).rejects.toMatchObject({ code: "SIGNER_REJECTED" });
+  });
 });
 

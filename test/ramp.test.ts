@@ -1378,4 +1378,29 @@ describe("createRamp", () => {
       });
     });
   });
+
+  describe("JWT decode browser atob fallback", () => {
+    it("decodes JWT expiry via atob when Buffer is undefined", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+
+      const originalBuffer = globalThis.Buffer;
+      vi.stubGlobal("Buffer", undefined);
+      try {
+        const ramp = createRamp({
+          network: "testnet",
+          anchorId: "sdf-testanchor",
+          signer: mockSigner,
+        });
+
+        const first = await ramp.authenticate();
+        const second = await ramp.authenticate();
+        expect(first).toBe(token);
+        expect(second).toBe(token);
+        expect(mockSep10Authenticate).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.stubGlobal("Buffer", originalBuffer);
+      }
+    });
+  });
 });

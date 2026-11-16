@@ -122,5 +122,38 @@ describe("freighterSigner", () => {
       }
     }
   });
+
+  it("handles string address response and rejects empty/invalid addresses", async () => {
+    const signer = freighterSigner();
+    mockGetAddress.mockResolvedValue(testAddress);
+    await expect(signer.getPublicKey()).resolves.toBe(testAddress);
+
+    mockGetAddress.mockResolvedValue({ address: "" });
+    await expect(signer.getPublicKey()).rejects.toMatchObject({
+      code: "SIGNER_REJECTED",
+    });
+
+    mockGetAddress.mockResolvedValue({ error: { code: -4 } });
+    await expect(signer.getPublicKey()).rejects.toMatchObject({
+      code: "SIGNER_REJECTED",
+    });
+  });
+
+  it("rejects empty signedTxXdr and object error in signTransaction", async () => {
+    const signer = freighterSigner();
+    mockSignTransaction.mockResolvedValue({ signedTxXdr: "" });
+    await expect(
+      signer.signTransaction(testXdr, passphrase)
+    ).rejects.toMatchObject({
+      code: "SIGNER_REJECTED",
+    });
+
+    mockSignTransaction.mockResolvedValue({ error: { reason: "timeout" } });
+    await expect(
+      signer.signTransaction(testXdr, passphrase)
+    ).rejects.toMatchObject({
+      code: "SIGNER_REJECTED",
+    });
+  });
 });
 
