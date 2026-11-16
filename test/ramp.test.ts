@@ -22,6 +22,8 @@ const {
   mockSep24Deposit,
   mockSep24Withdraw,
   mockSep24GetTransactionBy,
+  mockSep24GetTransactionsForAsset,
+  mockSep24Info,
   mockSep24,
   mockAnchor,
   mockTestNet,
@@ -34,10 +36,14 @@ const {
   const mockSep24Deposit = vi.fn();
   const mockSep24Withdraw = vi.fn();
   const mockSep24GetTransactionBy = vi.fn();
+  const mockSep24GetTransactionsForAsset = vi.fn();
+  const mockSep24Info = vi.fn();
   const mockSep24 = vi.fn().mockReturnValue({
     deposit: mockSep24Deposit,
     withdraw: mockSep24Withdraw,
     getTransactionBy: mockSep24GetTransactionBy,
+    getTransactionsForAsset: mockSep24GetTransactionsForAsset,
+    info: mockSep24Info,
   });
   const mockAnchor = vi.fn().mockReturnValue({
     sep10: mockSep10,
@@ -56,6 +62,8 @@ const {
     mockSep24Deposit,
     mockSep24Withdraw,
     mockSep24GetTransactionBy,
+    mockSep24GetTransactionsForAsset,
+    mockSep24Info,
     mockSep24,
     mockAnchor,
     mockTestNet,
@@ -114,6 +122,8 @@ describe("createRamp", () => {
       deposit: mockSep24Deposit,
       withdraw: mockSep24Withdraw,
       getTransactionBy: mockSep24GetTransactionBy,
+      getTransactionsForAsset: mockSep24GetTransactionsForAsset,
+      info: mockSep24Info,
     });
     mockAnchor.mockReturnValue({
       sep10: mockSep10,
@@ -1285,6 +1295,87 @@ describe("createRamp", () => {
       expect(t1).toBe(token);
       expect(t2).toBe(token);
       expect(mockSep10Authenticate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("getTransactions & getAnchorInfo", () => {
+    it("fetches transaction history for a supported asset with filters", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      const sampleTxs = [
+        { id: "tx-1", status: "completed", kind: "deposit" },
+        { id: "tx-2", status: "pending_external", kind: "withdrawal" },
+      ];
+      mockSep24GetTransactionsForAsset.mockResolvedValue(sampleTxs);
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const res = await ramp.getTransactions({
+        assetCode: "SRT",
+        limit: 10,
+        kind: "deposit",
+      });
+
+      expect(res).toEqual(sampleTxs);
+      expect(mockSep24GetTransactionsForAsset).toHaveBeenCalledWith({
+        authToken: expect.objectContaining({ token }),
+        assetCode: "SRT",
+        noOlderThan: undefined,
+        limit: 10,
+        kind: "deposit",
+        pagingId: undefined,
+        lang: undefined,
+      });
+    });
+
+    it("throws UNSUPPORTED_ASSET when getTransactions is called with unknown asset", async () => {
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(
+        ramp.getTransactions({ assetCode: "UNKNOWN" })
+      ).rejects.toMatchObject({
+        code: "UNSUPPORTED_ASSET",
+      });
+    });
+
+    it("fetches SEP-24 anchor /info metadata via getAnchorInfo", async () => {
+      const infoPayload = {
+        deposit: { SRT: { enabled: true, min_amount: 1, max_amount: 1000 } },
+        withdraw: { SRT: { enabled: true, min_amount: 1, max_amount: 1000 } },
+      };
+      mockSep24Info.mockResolvedValue(infoPayload);
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const info = await ramp.getAnchorInfo({ shouldRefresh: true, lang: "en" });
+      expect(info).toEqual(infoPayload);
+      expect(mockSep24Info).toHaveBeenCalledWith(true, "en");
+    });
+
+    it("maps getAnchorInfo errors to ANCHOR_UNREACHABLE", async () => {
+      mockSep24Info.mockRejectedValue(new Error("connect ETIMEDOUT"));
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(ramp.getAnchorInfo()).rejects.toMatchObject({
+        code: "ANCHOR_UNREACHABLE",
+      });
     });
   });
 });

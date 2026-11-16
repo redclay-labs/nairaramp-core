@@ -19,6 +19,8 @@ export {
   type DepositOptions,
   type WithdrawOptions,
   type AnchorTransaction,
+  type GetTransactionsOptions,
+  type AnchorInfo,
   type GetPriceOptions,
   type Quote,
   type RequestQuoteOptions,

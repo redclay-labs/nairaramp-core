@@ -75,6 +75,17 @@ export interface WithdrawOptions {
   amount?: string;
 }
 
+export interface GetTransactionsOptions {
+  assetCode: string;
+  noOlderThan?: string;
+  limit?: number;
+  kind?: "deposit" | "withdrawal";
+  pagingId?: string;
+  lang?: string;
+}
+
+export type AnchorInfo = Types.Sep24Info;
+
 export interface CreateRampOptions {
   network: "testnet" | "mainnet";
   anchorId: string;
@@ -91,6 +102,11 @@ export interface Ramp {
   deposit(options: DepositOptions): Promise<{ id: string; url: string }>;
   withdraw(options: WithdrawOptions): Promise<{ id: string; url: string }>;
   getTransaction(id: string): Promise<AnchorTransaction>;
+  getTransactions(options: GetTransactionsOptions): Promise<AnchorTransaction[]>;
+  getAnchorInfo(options?: {
+    shouldRefresh?: boolean;
+    lang?: string;
+  }): Promise<AnchorInfo>;
   completeWithdrawal(id: string): Promise<{ hash: string }>;
   watch(
     id: string,
@@ -543,6 +559,52 @@ export function createRamp({
         const tx = await sep24.getTransactionBy({ authToken, id });
 
         return tx as unknown as AnchorTransaction;
+      } catch (err) {
+        mapAnchorError(err, anchorEntry.homeDomain);
+      }
+    },
+
+    async getTransactions(
+      options: GetTransactionsOptions
+    ): Promise<AnchorTransaction[]> {
+      const isSupported = anchorEntry.assets.some(
+        (a) => a.code === options.assetCode
+      );
+      if (!isSupported) {
+        throw new NairaRampError(
+          "UNSUPPORTED_ASSET",
+          `Asset ${options.assetCode} is not supported by anchor ${anchorEntry.id}`
+        );
+      }
+
+      const token = await ramp.authenticate();
+
+      try {
+        const authToken = Types.AuthToken.from(token);
+        const sep24 = anchorClient.sep24();
+        const txs = await sep24.getTransactionsForAsset({
+          authToken,
+          assetCode: options.assetCode,
+          noOlderThan: options.noOlderThan,
+          limit: options.limit,
+          kind: options.kind,
+          pagingId: options.pagingId,
+          lang: options.lang,
+        });
+
+        return txs as unknown as AnchorTransaction[];
+      } catch (err) {
+        mapAnchorError(err, anchorEntry.homeDomain);
+      }
+    },
+
+    async getAnchorInfo(options?: {
+      shouldRefresh?: boolean;
+      lang?: string;
+    }): Promise<AnchorInfo> {
+      try {
+        const sep24 = anchorClient.sep24();
+        return await sep24.info(options?.shouldRefresh, options?.lang);
       } catch (err) {
         mapAnchorError(err, anchorEntry.homeDomain);
       }

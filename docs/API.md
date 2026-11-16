@@ -141,6 +141,20 @@ const tx = await ramp.getTransaction("sep24-transaction-id");
 console.log("Transaction status:", tx.status);
 ```
 
+#### `ramp.getTransactions(options: GetTransactionsOptions): Promise<AnchorTransaction[]>`
+Queries SEP-24 transaction history for a supported asset via `sep24.getTransactionsForAsset`. Supports `noOlderThan`, `limit`, `kind` (`"deposit" | "withdrawal"`), `pagingId`, and `lang`.
+
+**Throws:**
+- `UNSUPPORTED_ASSET` - If `options.assetCode` is not in the anchor's asset list.
+- `AUTH_FAILED` - If authentication fails.
+- `ANCHOR_UNREACHABLE` - If anchor is unreachable.
+
+#### `ramp.getAnchorInfo(options?: { shouldRefresh?: boolean; lang?: string }): Promise<AnchorInfo>`
+Fetches SEP-24 `/info` metadata (deposit/withdraw asset limits, fees, and feature flags) via `sep24.info`.
+
+**Throws:**
+- `ANCHOR_UNREACHABLE` - If anchor `/info` fails.
+
 #### `ramp.completeWithdrawal(id: string): Promise<{ hash: string }>`
 Completes a pending withdrawal once status reaches `"pending_user_transfer_start"`. Fetches transaction details, builds and signs Stellar payment to `withdraw_anchor_account` with the required memo, submits to Horizon, and returns transaction hash.
 
