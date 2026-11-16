@@ -223,6 +223,39 @@ Submits or updates SEP-12 customer KYC fields (`sep9Info` and optional binary do
 - `AUTH_FAILED` - If authentication fails or anchor returns 401/403.
 - `ANCHOR_UNREACHABLE` - If anchor does not advertise `sep12` or endpoint fails.
 
+#### `ramp.depositSep6(options: Sep6DepositOptions): Promise<Sep6DepositResult>`
+Initiates a programmatic (non-interactive) SEP-6 deposit. Validates that the anchor advertises `sep6` and supports `options.assetCode`.
+
+**Parameters:**
+- `options.assetCode`: `string` - Asset code to deposit (e.g. `"NGNT"`).
+- `options.account?`: `string` - Destination Stellar account (defaults to `signer.publicKey()`).
+- `options.amount?`: `string` - Optional deposit amount.
+- `options.type?`: `string` - Deposit method type supported by the anchor.
+- `options.customerId?`: `string` - Optional SEP-12 customer ID.
+
+**Throws:**
+- `UNSUPPORTED_ASSET` - If `assetCode` is not in the anchor's asset list.
+- `KYC_REQUIRED` - If the anchor returns `customer_info_needed` / missing KYC fields.
+- `AUTH_FAILED` - If authentication fails or anchor returns 401/403.
+- `ANCHOR_UNREACHABLE` - If anchor does not advertise `sep6` or endpoint fails.
+
+#### `ramp.withdrawSep6(options: Sep6WithdrawOptions): Promise<Sep6WithdrawResult>`
+Initiates a programmatic (non-interactive) SEP-6 withdrawal. Validates that the anchor advertises `sep6` and supports `options.assetCode`.
+
+**Parameters:**
+- `options.assetCode`: `string` - Asset code to withdraw (e.g. `"NGNT"`).
+- `options.type`: `string` - Withdrawal method type (e.g. `"bank_account"`).
+- `options.dest?`: `string` - Destination off-chain account identifier.
+- `options.destExtra?`: `string` - Extra destination routing metadata (e.g. bank code).
+- `options.amount?`: `string` - Optional withdrawal amount.
+- `options.customerId?`: `string` - Optional SEP-12 customer ID.
+
+**Throws:**
+- `UNSUPPORTED_ASSET` - If `assetCode` is not in the anchor's asset list.
+- `KYC_REQUIRED` - If the anchor returns `customer_info_needed` / missing KYC fields.
+- `AUTH_FAILED` - If authentication fails or anchor returns 401/403.
+- `ANCHOR_UNREACHABLE` - If anchor does not advertise `sep6` or endpoint fails.
+
 ---
 
 ## 3. Types for Core Ramp

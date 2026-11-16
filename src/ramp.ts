@@ -36,6 +36,14 @@ import {
   type PutKycOptions,
   type PutKycResult,
 } from "./kyc.js";
+import {
+  performSep6Deposit,
+  performSep6Withdraw,
+  type Sep6DepositOptions,
+  type Sep6DepositResult,
+  type Sep6WithdrawOptions,
+  type Sep6WithdrawResult,
+} from "./sep6.js";
 import { assertNetworkAllowed } from "./guard.js";
 
 type SdkAnchorTx = Types.DepositTransaction & Types.WithdrawTransaction;
@@ -88,6 +96,8 @@ export interface Ramp {
   getPrice(options: GetPriceOptions): Promise<Quote>;
   getKycStatus(options?: KycStatusOptions): Promise<KycStatusResult>;
   putKyc(options: PutKycOptions): Promise<PutKycResult>;
+  depositSep6(options: Sep6DepositOptions): Promise<Sep6DepositResult>;
+  withdrawSep6(options: Sep6WithdrawOptions): Promise<Sep6WithdrawResult>;
 }
 
 export type { GetPriceOptions, Quote };
@@ -100,6 +110,12 @@ export type {
   PutKycOptions,
   PutKycResult,
 } from "./kyc.js";
+export type {
+  Sep6DepositOptions,
+  Sep6DepositResult,
+  Sep6WithdrawOptions,
+  Sep6WithdrawResult,
+} from "./sep6.js";
 
 function resolvePaymentAsset(
   tx: AnchorTransaction,
@@ -716,6 +732,34 @@ export function createRamp({
       return submitKyc(options, {
         anchor: anchorEntry,
         anchorClient,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
+    },
+
+    async depositSep6(options: Sep6DepositOptions): Promise<Sep6DepositResult> {
+      const account = options.account ?? (await signer.getPublicKey());
+      return performSep6Deposit(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        account,
+        authenticate: async () => {
+          const rawToken = await ramp.authenticate();
+          return { token: rawToken } as Types.AuthToken;
+        },
+      });
+    },
+
+    async withdrawSep6(
+      options: Sep6WithdrawOptions
+    ): Promise<Sep6WithdrawResult> {
+      const account = options.account ?? (await signer.getPublicKey());
+      return performSep6Withdraw(options, {
+        anchor: anchorEntry,
+        anchorClient,
+        account,
         authenticate: async () => {
           const rawToken = await ramp.authenticate();
           return { token: rawToken } as Types.AuthToken;

@@ -28,6 +28,10 @@ export {
   type KycStatusResult,
   type PutKycOptions,
   type PutKycResult,
+  type Sep6DepositOptions,
+  type Sep6DepositResult,
+  type Sep6WithdrawOptions,
+  type Sep6WithdrawResult,
 } from "./ramp.js";
 export { type Signer } from "./signers/types.js";
 export { keypairSigner } from "./signers/keypair.js";
