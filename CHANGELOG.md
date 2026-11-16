@@ -5,7 +5,7 @@ All notable changes to `@nairaramp/core` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-11-16
 
 ### Added
 - **SEP-12 KYC (`src/kyc.ts`)**: `ramp.getKycStatus(options?)` and `ramp.putKyc(options)` supporting SEP-9 text/binary fields, `add`/`update` routing, and `KYC_REQUIRED` mapping.

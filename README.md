@@ -1,7 +1,7 @@
 # @nairaramp/core
 
 [![npm version](https://img.shields.io/npm/v/@nairaramp/core.svg?style=flat-square)](https://www.npmjs.com/package/@nairaramp/core)
-[![Release](https://img.shields.io/github/v/tag/redclay-labs/nairaramp-core?label=release&style=flat-square)](https://github.com/redclay-labs/nairaramp-core/releases/tag/v0.1.0)
+[![Release](https://img.shields.io/github/v/tag/redclay-labs/nairaramp-core?label=release&style=flat-square)](https://github.com/redclay-labs/nairaramp-core/releases/tag/v0.2.0)
 [![CI Workflow](https://img.shields.io/github/actions/workflow/status/redclay-labs/nairaramp-core/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/redclay-labs/nairaramp-core/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat-square)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.json)
@@ -9,7 +9,7 @@
 
 **A production-ready TypeScript SDK that adds "Pay with Naira" (Fiat On-Ramp) and "Cash Out to Naira" (Fiat Off-Ramp) flows to Stellar applications through Stellar Anchors.**
 
-Published on the npm registry as [`@nairaramp/core@0.1.0`](https://www.npmjs.com/package/@nairaramp/core) with git tag [`v0.1.0`](https://github.com/redclay-labs/nairaramp-core/releases/tag/v0.1.0).
+Published as [`@nairaramp/core@0.2.0`](https://www.npmjs.com/package/@nairaramp/core) with git tag [`v0.2.0`](https://github.com/redclay-labs/nairaramp-core/releases/tag/v0.2.0).
 
 ---
 
