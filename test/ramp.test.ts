@@ -920,6 +920,7 @@ describe("createRamp", () => {
         id: "w-text",
         status: "pending_user_transfer_start",
         amount_in: "25.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
         withdraw_memo: "sample-text-memo",
         withdraw_memo_type: "text",
@@ -954,6 +955,7 @@ describe("createRamp", () => {
         id: "w-id",
         status: "pending_user_transfer_start",
         amount_in: "15.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
         withdraw_memo: "987654321",
         withdraw_memo_type: "id",
@@ -984,6 +986,7 @@ describe("createRamp", () => {
         id: "w-hash",
         status: "pending_user_transfer_start",
         amount_in: "30.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
         withdraw_memo: hashBase64,
         withdraw_memo_type: "hash",
@@ -1045,6 +1048,7 @@ describe("createRamp", () => {
         id: "w-no-memo",
         status: "pending_user_transfer_start",
         amount_in: "40.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
         withdraw_memo: undefined,
         withdraw_memo_type: undefined,
@@ -1071,6 +1075,7 @@ describe("createRamp", () => {
         id: "w-fee-fallback",
         status: "pending_user_transfer_start",
         amount_in: "10.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
       });
 
@@ -1094,6 +1099,7 @@ describe("createRamp", () => {
         id: "w-horizon-fail",
         status: "pending_user_transfer_start",
         amount_in: "10.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
       });
 
@@ -1137,6 +1143,7 @@ describe("createRamp", () => {
         id: "w-signer-reject",
         status: "pending_user_transfer_start",
         amount_in: "10.00",
+        amount_in_asset: "stellar:SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
         withdraw_anchor_account: destinationKp.publicKey(),
       });
 
@@ -1159,6 +1166,70 @@ describe("createRamp", () => {
           expect(e.code).toBe("SIGNER_REJECTED");
         }
       }
+    });
+
+    it("throws TRANSACTION_FAILED when withdrawal asset is missing on multi-asset anchor", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24GetTransactionBy.mockResolvedValue({
+        id: "w-no-asset",
+        status: "pending_user_transfer_start",
+        amount_in: "10.00",
+        withdraw_anchor_account: destinationKp.publicKey(),
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(ramp.completeWithdrawal("w-no-asset")).rejects.toMatchObject({
+        code: "TRANSACTION_FAILED",
+      });
+    });
+
+    it("throws TRANSACTION_FAILED on unrecognized or malformed withdrawal asset", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24GetTransactionBy.mockResolvedValue({
+        id: "w-bad-asset",
+        status: "pending_user_transfer_start",
+        amount_in: "10.00",
+        amount_in_asset: "stellar:BAD",
+        withdraw_anchor_account: destinationKp.publicKey(),
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      await expect(ramp.completeWithdrawal("w-bad-asset")).rejects.toMatchObject({
+        code: "TRANSACTION_FAILED",
+      });
+    });
+
+    it("resolves stellar:native withdrawal asset to native XLM payment", async () => {
+      const token = createJwt(Math.floor(Date.now() / 1000) + 3600);
+      mockSep10Authenticate.mockResolvedValue({ token });
+      mockSep24GetTransactionBy.mockResolvedValue({
+        id: "w-native",
+        status: "pending_user_transfer_start",
+        amount_in: "5.00",
+        amount_in_asset: "stellar:native",
+        withdraw_anchor_account: destinationKp.publicKey(),
+      });
+
+      const ramp = createRamp({
+        network: "testnet",
+        anchorId: "sdf-testanchor",
+        signer: mockSigner,
+      });
+
+      const res = await ramp.completeWithdrawal("w-native");
+      expect(res.hash).toBeDefined();
     });
   });
 

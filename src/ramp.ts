@@ -86,11 +86,12 @@ function resolvePaymentAsset(
     asset_code?: string;
     withdraw_asset?: string;
   };
-  const assetStr =
+  const assetStr = (
     rawAsset.amount_in_asset ||
     rawAsset.asset_code ||
     rawAsset.withdraw_asset ||
-    "";
+    ""
+  ).trim();
 
   if (assetStr === "native") {
     return Asset.native();
@@ -98,25 +99,38 @@ function resolvePaymentAsset(
 
   if (assetStr.startsWith("stellar:")) {
     const parts = assetStr.split(":");
-    if (parts.length >= 3 && parts[1] && parts[2]) {
-      return new Asset(parts[1], parts[2]);
-    }
-    if (parts.length >= 2 && parts[1] === "native") {
+    if (parts.length === 2 && parts[1] === "native") {
       return Asset.native();
     }
+    if (parts.length === 3 && parts[1] && parts[2]) {
+      return new Asset(parts[1], parts[2]);
+    }
+    throw new NairaRampError(
+      "TRANSACTION_FAILED",
+      `Invalid Stellar asset identifier on withdrawal transaction: '${assetStr}'`
+    );
   }
 
-  const matched = anchorEntryAssets.find((a) => a.code === assetStr);
-  if (matched) {
-    return new Asset(matched.code, matched.issuer);
+  if (assetStr !== "") {
+    const matched = anchorEntryAssets.find((a) => a.code === assetStr);
+    if (matched) {
+      return new Asset(matched.code, matched.issuer);
+    }
+    throw new NairaRampError(
+      "TRANSACTION_FAILED",
+      `Withdrawal transaction asset '${assetStr}' is not supported by anchor`
+    );
   }
 
-  if (anchorEntryAssets.length > 0) {
-    const first = anchorEntryAssets[0]!;
-    return new Asset(first.code, first.issuer);
+  if (anchorEntryAssets.length === 1) {
+    const only = anchorEntryAssets[0]!;
+    return new Asset(only.code, only.issuer);
   }
 
-  return Asset.native();
+  throw new NairaRampError(
+    "TRANSACTION_FAILED",
+    "Withdrawal transaction is missing asset identifier and anchor has multiple assets"
+  );
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
