@@ -1,10 +1,12 @@
 import { AnchorEntry, AnchorEntrySchema } from "./schema.js";
 import { NairaRampError } from "../errors.js";
 import sdfTestAnchor from "./anchors/sdf-testanchor.json";
+import ngncAnchor from "./anchors/ngnc.json";
+import cowrieAnchor from "./anchors/cowrie.json";
 
 // Explicit array of static imports for browser compatibility (no fs)
 // Anchor JSON files will be imported statically as they are registered.
-const rawAnchors: unknown[] = [sdfTestAnchor];
+const rawAnchors: unknown[] = [sdfTestAnchor, ngncAnchor, cowrieAnchor];
 
 export const anchors: AnchorEntry[] = rawAnchors.map((raw) =>
   AnchorEntrySchema.parse(raw)

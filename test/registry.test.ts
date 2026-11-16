@@ -97,10 +97,9 @@ describe("Anchor Registry Schema", () => {
     expect(content.includes("drafts")).toBe(false);
   });
 
-  it("validates all draft entries in src/registry/drafts/ against schema", () => {
+  it("validates any draft entries in src/registry/drafts/ against schema", () => {
     const draftsDir = resolve(__dirname, "../src/registry/drafts");
     const files = readdirSync(draftsDir).filter((file) => file.endsWith(".json"));
-    expect(files.length).toBeGreaterThan(0);
 
     for (const file of files) {
       const content = JSON.parse(readFileSync(resolve(draftsDir, file), "utf8"));
@@ -133,8 +132,46 @@ describe("Anchor Registry Functions", () => {
     expect(anchor.seps).toContain("sep24");
   });
 
-  it("listAnchors returns array", () => {
+  it("listAnchors returns array and supports network/country filters", () => {
     const all = listAnchors();
     expect(Array.isArray(all)).toBe(true);
+    expect(all.length).toBeGreaterThanOrEqual(3);
+
+    const testnetAnchors = listAnchors({ network: "testnet" });
+    expect(testnetAnchors.map((a) => a.id)).toContain("sdf-testanchor");
+    expect(testnetAnchors.every((a) => a.network === "testnet")).toBe(true);
+
+    const mainnetAnchors = listAnchors({ network: "mainnet" });
+    expect(mainnetAnchors.map((a) => a.id)).toEqual(
+      expect.arrayContaining(["ngnc", "cowrie"])
+    );
+    expect(mainnetAnchors.every((a) => a.network === "mainnet")).toBe(true);
+
+    const ngAnchors = listAnchors({ country: "NG" });
+    expect(ngAnchors.map((a) => a.id)).toEqual(
+      expect.arrayContaining(["ngnc", "cowrie"])
+    );
+    expect(ngAnchors.every((a) => a.countries.includes("NG"))).toBe(true);
+
+    const ngMainnet = listAnchors({ network: "mainnet", country: "NG" });
+    expect(ngMainnet.map((a) => a.id)).toEqual(
+      expect.arrayContaining(["ngnc", "cowrie"])
+    );
+
+    expect(listAnchors({ country: "ZZ" })).toEqual([]);
+  });
+
+  it("getAnchor returns promoted Nigerian mainnet anchors ngnc and cowrie", () => {
+    const ngnc = getAnchor("ngnc");
+    expect(ngnc.homeDomain).toBe("ngnc.online");
+    expect(ngnc.network).toBe("mainnet");
+    expect(ngnc.countries).toContain("NG");
+    expect(ngnc.seps).toEqual(["sep10", "sep24"]);
+
+    const cowrie = getAnchor("cowrie");
+    expect(cowrie.homeDomain).toBe("cowrie.exchange");
+    expect(cowrie.network).toBe("mainnet");
+    expect(cowrie.countries).toContain("NG");
+    expect(cowrie.seps).toEqual(["sep6", "sep10", "sep12"]);
   });
 });
