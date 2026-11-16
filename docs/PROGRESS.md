@@ -388,3 +388,24 @@
   - `pnpm lint`: Ran `eslint .`, passed with 0 errors (exit code 0).
   - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup` (exit code 0).
 - **Open issues:** None.
+
+## 2026-11-16 - Stellar Wave Appeal Roadmap (Items 1–10)
+
+- **What was built:**
+  - **Item 1 (`5e046e1`):** Exposed `readonly anchor: AnchorEntry` on `Ramp`, added `clientDomain` and `horizonUrl` options to `CreateRampOptions`, and deduplicated concurrent `authenticate()` calls via `authInFlight`.
+  - **Item 2 (`dcf73b1`):** Hardened `resolvePaymentAsset` in `src/ramp.ts` against malformed/unrecognized asset strings and ambiguous multi-asset defaults.
+  - **Item 3 (`0e17c96`):** Added bounded ±15% polling jitter and `WatchOptions` to `src/watcher.ts` and `ramp.watch()`.
+  - **Item 4 (`9faab3d`):** Verified live `ngnc.online` (`NGNC`) and `cowrie.exchange` (`NGNT`) SEP-1 endpoints and promoted them to `src/registry/anchors/`.
+  - **Item 5 (`0a14327`):** Implemented SEP-12 KYC (`getKycStatus`, `putKyc`) in `src/kyc.ts` and `Ramp`.
+  - **Item 6 (`550133f`):** Implemented SEP-6 non-interactive transfers (`depositSep6`, `withdrawSep6`) in `src/sep6.ts` and `Ramp`.
+  - **Item 7 (`0190e3a`):** Implemented SEP-38 firm quotes (`requestQuote`, `getQuote`) with `QUOTE_EXPIRED` handling in `src/quotes.ts` and `Ramp`.
+  - **Item 8 (`f278790`):** Implemented SEP-24 `getTransactions` and `getAnchorInfo` on `Ramp`.
+  - **Item 9 (`627d345`):** Added signer error/fallback tests and browser `atob` JWT fallback test, raising coverage to 85.31% Stmts / 81.22% Branch.
+  - **Item 10:** Updated `eslint.config.js`, `package.json`, `.github/workflows/ci.yml`, `README.md`, `CHANGELOG.md`, `docs/DECISIONS.md`, and `docs/PROGRESS.md`.
+- **Commands run with results:**
+  - `pnpm lint`: Passed with 0 errors and 0 warnings.
+  - `pnpm typecheck`: Passed with 0 errors.
+  - `pnpm test:coverage`: 151 passed, 4 integration tests skipped (85.31% Stmts, 81.22% Branch).
+  - `pnpm build`: Built ESM, CJS, and DTS bundles cleanly via `tsup`.
+  - `npm pack --dry-run`: Verified package tarball contains strictly `dist/`, `README.md`, `LICENSE`, and `package.json`.
+- **Open issues:** None.

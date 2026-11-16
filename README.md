@@ -89,11 +89,11 @@ npm view @nairaramp/core version
 | :--- | :--- | :--- |
 | **SEP-1** | Stellar Info TOML | Automatic discovery of anchor endpoints, accounts, and supported currencies. |
 | **SEP-10** | Web Authentication | Multi-party challenge transaction signing, server signature verification, JWT token issuance, and in-memory caching with 5-minute pre-expiration proactive refresh. |
-| **SEP-24** | Hosted Deposit | Upfront asset validation against anchor registry, interactive deposit URL retrieval, and state tracking. |
+| **SEP-24** | Hosted Deposit | Upfront asset validation against anchor registry, interactive deposit URL retrieval, history (`getTransactions`), and `/info` (`getAnchorInfo`). |
 | **SEP-24** | Hosted Withdrawal | Interactive withdrawal initiation, state tracking, and payment fulfillment (`completeWithdrawal`). |
-| **SEP-38** | Anchor Quotes | Indicative rate queries (`ramp.getPrice`), rigorous pair validation, and string-safe numerical normalization (zero float precision loss). |
-| **SEP-6** | Non-Interactive Transfer | Researched and documented for anchors requiring direct programmatic transfers (e.g., Cowrie Exchange). |
-| **SEP-12** | KYC API | Identity and KYC status verification architecture documented for Nigerian anchor onboarding. |
+| **SEP-38** | Anchor Quotes | Indicative rate queries (`getPrice`) and binding firm quotes (`requestQuote`, `getQuote`), rigorous pair validation, `QUOTE_EXPIRED` mapping, and string-safe normalization. |
+| **SEP-6** | Non-Interactive Transfer | Programmatic deposit and withdrawal flows (`depositSep6`, `withdrawSep6`) with KYC requirement mapping. |
+| **SEP-12** | KYC API | Customer KYC status inspection (`getKycStatus`) and SEP-9 field/binary submission (`putKyc`). |
 
 ---
 
@@ -377,8 +377,8 @@ During repository research, network audits of active Nigerian corridors were con
 
 | Anchor | Asset | Home Domain | Supported SEPs | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **NGNC** (Link) | `NGNC` | `ngnc.online` | SEP-10, SEP-24 | Verified Mainnet Draft (`src/registry/drafts/ngnc.json`) |
-| **Cowrie Exchange** | `NGNT` | `cowrie.exchange` | SEP-6, SEP-10, SEP-12 | Verified Mainnet Draft (`src/registry/drafts/cowrie.json`) |
+| **NGNC** (Link) | `NGNC` | `ngnc.online` | SEP-10, SEP-24 | Active Verified Mainnet (`src/registry/anchors/ngnc.json`) |
+| **Cowrie Exchange** | `NGNT` | `cowrie.exchange` | SEP-6, SEP-10, SEP-12 | Active Verified Mainnet (`src/registry/anchors/cowrie.json`) |
 | **SDF Test Anchor** | `SRT`, `USDC` | `testanchor.stellar.org` | SEP-6, SEP-10, SEP-24, SEP-38 | Active Testnet (`src/registry/anchors/sdf-testanchor.json`) |
 
 > Draft entries live safely in `src/registry/drafts/` to guarantee that unverified or non-production anchors are not loaded by default.

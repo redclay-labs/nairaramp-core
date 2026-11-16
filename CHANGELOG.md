@@ -5,6 +5,21 @@ All notable changes to `@nairaramp/core` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **SEP-12 KYC (`src/kyc.ts`)**: `ramp.getKycStatus(options?)` and `ramp.putKyc(options)` supporting SEP-9 text/binary fields, `add`/`update` routing, and `KYC_REQUIRED` mapping.
+- **SEP-6 Non-Interactive Transfers (`src/sep6.ts`)**: `ramp.depositSep6(options)` and `ramp.withdrawSep6(options)` with asset/SEP-6 guards and KYC requirement mapping.
+- **SEP-38 Firm Quotes (`src/quotes.ts`)**: `ramp.requestQuote(options)` and `ramp.getQuote(quoteId)` with `FirmQuote`, `RequestQuoteOptions`, and `QUOTE_EXPIRED` error mapping.
+- **SEP-24 History & Metadata (`src/ramp.ts`)**: `ramp.getTransactions(options)` and `ramp.getAnchorInfo(options?)`.
+- **Mainnet Anchor Registry**: Promoted live-verified Nigerian anchors `ngnc` (`NGNC`) and `cowrie` (`NGNT`) to `src/registry/anchors/`.
+- **Contract & Config Extensions (`src/ramp.ts`)**: Exposed `ramp.anchor` metadata, `clientDomain` and `horizonUrl` options on `createRamp`, and `authInFlight` concurrency deduplication in `authenticate()`.
+- **Watcher Jitter & Timing Options (`src/watcher.ts`)**: Bounded ±15% polling jitter and configurable `WatchOptions` (`initialDelayMs`, `maxDelayMs`, `jitterRatio`, `random`).
+- **Tooling & CI**: Added `test:coverage` script, ignored `coverage/**` in ESLint, and added coverage + `npm pack --dry-run` verification to `.github/workflows/ci.yml`.
+
+### Fixed
+- **Withdrawal Asset Resolution (`src/ramp.ts`)**: `resolvePaymentAsset` now strictly validates asset strings and rejects ambiguous missing assets on multi-asset anchors with `NairaRampError("TRANSACTION_FAILED")`.
+
 ## [0.1.0] - 2026-11-08
 
 ### Added
